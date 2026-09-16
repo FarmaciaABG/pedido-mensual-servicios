@@ -17,7 +17,7 @@ table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}th{pos
 @media print{header,.no-print{display:none!important}.shell{padding:0}.card{box-shadow:none;border:0}}
 
 </style></head>
-<body><header><div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><div><h1>Pedido mensual de servicios — Farmacia</h1><p>Revisión, cierre, historial y control</p></div><button class="secondary" onclick="logout()">Salir</button></div></header>
+<body><header><div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><div><h1>Pedido mensual de servicios — Farmacia</h1><p>Revisión, cierre, historial y control</p></div><button class="secondary" onclick="sessionStorage.removeItem(SESSION_KEY);location.href='index.html'">Salir</button></div></header>
 <div class="shell">
 <div class="filters no-print" style="margin-bottom:18px"><span class="pill active" data-view="current">Pedidos</span><span class="pill" data-view="history">Historial</span><span class="pill" data-view="consumption">Control de consumo</span><span class="pill" data-view="config">Configuración</span></div>
 <section id="current"><div class="grid4" id="metrics"></div><div class="card"><h2>Pedidos del periodo</h2><div class="table-wrap"><table><thead><tr><th>Servicio</th><th>Periodo</th><th>Responsable</th><th>Estado</th><th>Plazo</th><th>Acción</th></tr></thead><tbody id="ordersBody"></tbody></table></div></div></section>
@@ -26,8 +26,7 @@ table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}th{pos
 <section id="consumption" class="hidden"><div class="card"><h2>Control de consumo</h2><div class="alert info">El consumo real se calculará cuando exista un stock posterior válido: <b>stock anterior + autorizado − stock siguiente</b>. Los faltantes no se consideran cero.</div><div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Último consumo</th><th>Promedio 3M</th><th>Promedio 6M</th><th>Estado</th></tr></thead><tbody id="consBody"></tbody></table></div></div></section>
 <section id="config" class="hidden"><div class="card"><h2>Configuración</h2><h3>Calendario</h3><div id="periods"></div><h3>Correos automáticos</h3><div class="grid4"><div class="box"><b>Aviso apertura</b><label><input id="openActive" type="checkbox"> Activo</label><br><input id="openDays" type="number" min="0" style="width:80px"> día(s) antes</div><div class="box"><b>Tipo de días</b><select id="openType"><option value="business">Hábiles</option><option value="calendar">Corridos</option></select></div><div class="box"><b>Recordatorio cierre</b><label><input id="closeActive" type="checkbox"> Activo</label><br><input id="closeDays" type="number" min="0" style="width:80px"> día(s) antes</div><div class="box"><b>Tipo de días</b><select id="closeType"><option value="business">Hábiles</option><option value="calendar">Corridos</option></select></div></div><div class="footer"><button id="saveConfig">Guardar configuración</button></div><div id="cfgmsg"></div></div></section>
 </div>
-<script>
-window.APP_DATA = {
+<script>window.APP_DATA = {
   "services": [
     "Esterilización",
     "Vacunatorio",
@@ -3708,97 +3707,6 @@ window.APP_DATA = {
       "name": "Administrador Farmacia",
       "role": "pharmacy",
       "service": null
-    },
-    {
-      "username": "esterilizacion",
-      "password": "demo123",
-      "name": "Responsable Esterilización",
-      "role": "requester",
-      "service": "Esterilización"
-    },
-    {
-      "username": "vacunatorio",
-      "password": "demo123",
-      "name": "Responsable Vacunatorio",
-      "role": "requester",
-      "service": "Vacunatorio"
-    },
-    {
-      "username": "sector2",
-      "password": "demo123",
-      "name": "Responsable Sector 2",
-      "role": "requester",
-      "service": "Sector 2"
-    },
-    {
-      "username": "sector3",
-      "password": "demo123",
-      "name": "Responsable Sector 3",
-      "role": "requester",
-      "service": "Sector 3"
-    },
-    {
-      "username": "apositoseucecosfmh",
-      "password": "demo123",
-      "name": "Responsable Apósitos EU CECOSF MH",
-      "role": "requester",
-      "service": "Apósitos EU CECOSF MH"
-    },
-    {
-      "username": "tratamiento",
-      "password": "demo123",
-      "name": "Responsable Tratamiento",
-      "role": "requester",
-      "service": "Tratamiento"
-    },
-    {
-      "username": "rea",
-      "password": "demo123",
-      "name": "Responsable REA",
-      "role": "requester",
-      "service": "REA"
-    },
-    {
-      "username": "salaria",
-      "password": "demo123",
-      "name": "Responsable Sala RIA",
-      "role": "requester",
-      "service": "Sala RIA"
-    },
-    {
-      "username": "dental",
-      "password": "demo123",
-      "name": "Responsable Dental",
-      "role": "requester",
-      "service": "Dental"
-    },
-    {
-      "username": "padds",
-      "password": "demo123",
-      "name": "Responsable PADDS",
-      "role": "requester",
-      "service": "PADDS"
-    },
-    {
-      "username": "podologas",
-      "password": "demo123",
-      "name": "Responsable Podólogas",
-      "role": "requester",
-      "service": "Podólogas"
-    },
-    {
-      "username": "salasrespiratorias",
-      "password": "demo123",
-      "name": "Responsable Salas Respiratorias",
-      "role": "requester",
-      "service": "Salas Respiratorias"
-    },
-    {
-      "username": "equipodeservicio",
-      "password": "demo123",
-      "name": "Responsable Equipo de Servicio",
-      "role": "requester",
-      "service": "Equipo de Servicio"
     }
   ],
   "periods": [
@@ -3836,10 +3744,7 @@ window.APP_DATA = {
       "dayType": "calendar"
     }
   }
-};
-</script><script>
-
-const STORAGE_KEY = "pedido_servicios_abg_v1";
+};</script><script>const STORAGE_KEY = "pedido_servicios_abg_v1";
 const SESSION_KEY = "pedido_servicios_abg_session";
 
 function loadDB(){
