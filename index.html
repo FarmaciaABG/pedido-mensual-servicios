@@ -1,0 +1,13 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pedido mensual de servicios</title><link rel="stylesheet" href="css/app.css"></head>
+<body><header><h1>Pedido mensual de servicios</h1><p>Farmacia ABG</p></header><div class="shell"><div class="card login"><h2>Ingresar</h2><p class="small">Versión GitHub Pages. El acceso real se conectará posteriormente a Supabase.</p>
+<label>Usuario</label><input id="user" style="width:100%;margin:5px 0 12px"><label>Contraseña</label><input id="pass" type="password" style="width:100%;margin:5px 0 12px"><button id="loginBtn" style="width:100%">Ingresar</button><div id="msg"></div>
+<div class="alert info" style="margin-top:16px"><b>Demo Farmacia:</b> admin / admin123<br><b>Demo servicios:</b> cada servicio tiene un usuario demo; clave demo123.</div>
+<div class="small" style="margin-top:10px">Para conocer usuarios demo, abra <b>usuarios-demo.txt</b> del repositorio.</div></div></div>
+<script src="js/data.js"></script><script src="js/common.js"></script><script>
+document.getElementById("loginBtn").onclick=()=>{
+ const u=document.getElementById("user").value.trim(),p=document.getElementById("pass").value;
+ const found=APP_DATA.demoUsers.find(x=>x.username===u&&x.password===p);
+ if(!found){document.getElementById("msg").innerHTML='<div class="alert danger">Usuario o contraseña incorrectos.</div>';return;}
+ setSession(found); location.href=found.role==="pharmacy"?"farmacia.html":"pedido.html";
+};
+</script></body></html>

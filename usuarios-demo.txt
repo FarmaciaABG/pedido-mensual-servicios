@@ -1,0 +1,15 @@
+USUARIOS DEMO - NO USAR COMO CREDENCIALES REALES
+Farmacia: admin / admin123
+Esterilización: esterilizacion / demo123
+Vacunatorio: vacunatorio / demo123
+Sector 2: sector2 / demo123
+Sector 3: sector3 / demo123
+Apósitos EU CECOSF MH: apositoseucecosfmh / demo123
+Tratamiento: tratamiento / demo123
+REA: rea / demo123
+Sala RIA: salaria / demo123
+Dental: dental / demo123
+PADDS: padds / demo123
+Podólogas: podologas / demo123
+Salas Respiratorias: salasrespiratorias / demo123
+Equipo de Servicio: equipodeservicio / demo123
