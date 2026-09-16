@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pedido mensual</title><link rel="stylesheet" href="css/app.css"></head>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pedido mensual</title><link rel="stylesheet" href="app.css"></head>
 <body><header><div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><div><h1>Pedido mensual de servicios</h1><p id="headService"></p></div><button class="secondary" onclick="logout()">Salir</button></div></header>
 <div class="shell">
 <div class="topbar"><div class="meta"><b>Periodo</b><span id="period"></span></div><div class="meta"><b>Servicio</b><span id="service"></span></div><div class="meta"><b>Responsable</b><span id="responsible"></span></div><div class="meta"><b>Plazo</b><span id="deadline"></span></div></div>
@@ -11,7 +11,7 @@
 <div id="summaryCard" class="card hidden"><h2>Resumen del pedido</h2><div class="table-wrap"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Stock actual</th><th>Solicitud</th></tr></thead><tbody id="summaryBody"></tbody></table></div><div id="validation"></div><div class="footer"><button class="secondary" id="back">Volver a editar</button><button id="send">Enviar pedido a Farmacia</button></div></div>
 <div id="sentCard" class="card hidden"><h2>Pedido enviado</h2><div class="status">✓ Pedido enviado correctamente a Farmacia.</div><div id="sentData"></div></div>
 </div>
-<script src="js/data.js"></script><script src="js/common.js"></script><script>
+<script src="data.js"></script><script src="common.js"></script><script>
 const me=requireRole("requester"); if(!me) throw new Error();
 const p=getCurrentPeriod(), items=APP_DATA.serviceItems[me.service]||[]; let filter="all";
 let state=items.map(()=>({stock:"",qty:""})); const db=loadDB();

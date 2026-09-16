@@ -41,3 +41,17 @@ No guardar contraseñas reales ni información sensible en GitHub.
 
 ## Usuarios demo
 Ver `usuarios-demo.txt`.
+
+
+## Versión simplificada para carga web
+Todos los archivos están en la raíz del repositorio. No requiere crear carpetas `css` ni `js`.
+Suba estos archivos directamente a la raíz:
+- index.html
+- pedido.html
+- farmacia.html
+- app.css
+- data.js
+- common.js
+- usuarios-demo.txt
+- README.md
+- .nojekyll

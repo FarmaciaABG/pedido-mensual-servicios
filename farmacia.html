@@ -1,4 +1,4 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Farmacia</title><link rel="stylesheet" href="css/app.css"></head>
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Farmacia</title><link rel="stylesheet" href="app.css"></head>
 <body><header><div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><div><h1>Pedido mensual de servicios — Farmacia</h1><p>Revisión, cierre, historial y control</p></div><button class="secondary" onclick="logout()">Salir</button></div></header>
 <div class="shell">
 <div class="filters no-print" style="margin-bottom:18px"><span class="pill active" data-view="current">Pedidos</span><span class="pill" data-view="history">Historial</span><span class="pill" data-view="consumption">Control de consumo</span><span class="pill" data-view="config">Configuración</span></div>
@@ -8,7 +8,7 @@
 <section id="consumption" class="hidden"><div class="card"><h2>Control de consumo</h2><div class="alert info">El consumo real se calculará cuando exista un stock posterior válido: <b>stock anterior + autorizado − stock siguiente</b>. Los faltantes no se consideran cero.</div><div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Último consumo</th><th>Promedio 3M</th><th>Promedio 6M</th><th>Estado</th></tr></thead><tbody id="consBody"></tbody></table></div></div></section>
 <section id="config" class="hidden"><div class="card"><h2>Configuración</h2><h3>Calendario</h3><div id="periods"></div><h3>Correos automáticos</h3><div class="grid4"><div class="box"><b>Aviso apertura</b><label><input id="openActive" type="checkbox"> Activo</label><br><input id="openDays" type="number" min="0" style="width:80px"> día(s) antes</div><div class="box"><b>Tipo de días</b><select id="openType"><option value="business">Hábiles</option><option value="calendar">Corridos</option></select></div><div class="box"><b>Recordatorio cierre</b><label><input id="closeActive" type="checkbox"> Activo</label><br><input id="closeDays" type="number" min="0" style="width:80px"> día(s) antes</div><div class="box"><b>Tipo de días</b><select id="closeType"><option value="business">Hábiles</option><option value="calendar">Corridos</option></select></div></div><div class="footer"><button id="saveConfig">Guardar configuración</button></div><div id="cfgmsg"></div></div></section>
 </div>
-<script src="js/data.js"></script><script src="js/common.js"></script><script>
+<script src="data.js"></script><script src="common.js"></script><script>
 const me=requireRole("pharmacy"); if(!me) throw new Error();
 let db=loadDB(), activeOrder=null;
 function refresh(){db=loadDB();renderMetrics();renderOrders();renderHistory();renderConsumption();}
