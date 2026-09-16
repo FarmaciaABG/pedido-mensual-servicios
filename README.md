@@ -55,3 +55,9 @@ Suba estos archivos directamente a la raíz:
 - usuarios-demo.txt
 - README.md
 - .nojekyll
+
+
+## Versión autocontenida
+Los archivos `index.html`, `pedido.html` y `farmacia.html` incluyen sus estilos y scripts directamente.
+No dependen de `app.css`, `data.js` ni `common.js`.
+Esto evita problemas de rutas/caché en GitHub Pages.
