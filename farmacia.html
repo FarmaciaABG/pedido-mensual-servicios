@@ -52,15 +52,24 @@ async function ensureAuth(){
   return true;
 }
 async function loadAll(){
-  const [o,p,e,h,srv] = await Promise.all([
+  const [o,p,e,h,srv,it] = await Promise.all([
     sb.from("orders").select("*,services(name),periods(label,year,month),order_lines(*,items(name,unit))").order("submitted_at",{ascending:false}),
     sb.from("periods").select("*").order("year").order("month"),
     sb.from("email_config").select("*"),
-    sb.from("historical_service_records").select("*,services(name),items(name,unit)").order("year").order("month"),
-    sb.from("services").select("id,name,active").eq("active",true).order("id")
+    // Se consulta el histórico sin relaciones anidadas para evitar fallas de caché de esquema de PostgREST.
+    sb.from("historical_service_records").select("*").order("year").order("month"),
+    sb.from("services").select("id,name,active").eq("active",true).order("id"),
+    sb.from("items").select("id,name,unit")
   ]);
-  if(o.error) throw o.error; if(p.error) throw p.error; if(e.error) throw e.error; if(h.error) throw h.error; if(srv.error) throw srv.error;
-  orders=o.data; periods=p.data; emailConfig=Object.fromEntries(e.data.map(x=>[x.key,x])); historical=h.data||[]; services=srv.data||[];
+  if(o.error) throw o.error; if(p.error) throw p.error; if(e.error) throw e.error; if(h.error) throw h.error; if(srv.error) throw srv.error; if(it.error) throw it.error;
+  orders=o.data||[]; periods=p.data||[]; emailConfig=Object.fromEntries((e.data||[]).map(x=>[x.key,x])); services=srv.data||[];
+  const itemsById=Object.fromEntries((it.data||[]).map(x=>[String(x.id),x]));
+  const servicesById=Object.fromEntries(services.map(x=>[String(x.id),x]));
+  historical=(h.data||[]).map(r=>({
+    ...r,
+    items:itemsById[String(r.item_id)]||null,
+    services:servicesById[String(r.service_id)]||null
+  }));
   renderAll();
 }
 function renderAll(){renderMetrics();renderOrders();renderReview();renderHistory();renderConsumption();renderConfig();}
@@ -154,5 +163,5 @@ document.getElementById("saveConfig").onclick=async()=>{
 function showSection(v){["current","detail","review","history","consumption","config"].forEach(id=>document.getElementById(id).classList.toggle("hidden",id!==v));document.querySelectorAll(".pill").forEach(p=>p.classList.toggle("active",p.dataset.view===v));}
 document.querySelectorAll(".pill").forEach(p=>p.onclick=()=>showSection(p.dataset.view));
 document.getElementById("logoutBtn").onclick=async()=>{await sb.auth.signOut();location.href="index.html";};
-(async()=>{if(await ensureAuth()){try{await loadAll()}catch(e){alert("Error: "+e.message)}}})();
+(async()=>{if(await ensureAuth()){try{await loadAll()}catch(e){console.error(e);alert("Error al cargar Control Farmacia: "+e.message);const m=document.getElementById("reviewMetrics");if(m)m.innerHTML=`<div class="alert danger" style="grid-column:1/-1">No fue posible cargar el historial: ${esc(e.message)}</div>`;}}})();
 </script></body></html>
