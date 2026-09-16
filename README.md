@@ -1,23 +1,19 @@
-# Pedido mensual de servicios — GitHub Pages v2
+# Pedido mensual de servicios — GitHub Pages + Supabase
 
-Pantalla inicial con dos accesos:
-- Solicitar pedido
-- Control Farmacia
+Esta versión ya usa Supabase como base central compartida.
 
-Solicitante:
-1. Elige servicio.
-2. Ingresa nombre de quien hace el pedido.
-3. Completa y envía.
-4. Solo un pedido por servicio y mes.
+- Solicitante: sin usuario/contraseña.
+- Control Farmacia: login con Supabase Auth.
+- Un pedido por servicio y mes se controla en la base de datos.
+- Los pedidos enviados desde un computador aparecen en Control Farmacia desde otro.
 
-Farmacia:
-- acceso con usuario/contraseña;
-- revisión;
-- autorizado;
-- cierre;
-- recepción;
-- guía;
-- historial;
-- control y configuración.
+Archivos a subir/reemplazar en GitHub:
+- index.html
+- solicitar.html
+- pedido.html
+- farmacia-login.html
+- farmacia.html
+- README.md
+- .nojekyll
 
-IMPORTANTE: esta versión todavía guarda los datos en el navegador (localStorage). Para uso real entre distintos computadores, conectar Supabase.
+IMPORTANTE: la clave incluida en el frontend es la Publishable Key de Supabase, diseñada para navegador. No incluye service_role ni claves secretas.
