@@ -1,0 +1,278 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Control Farmacia</title><style>:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#dfe5ee;--brand:#1f5b8f;--brand2:#0f416d;--soft:#eaf3fb;--warn:#fff5cc;--warnb:#d6a600;--danger:#fde8e8;--dangerb:#d64545;--ok:#e8f7ec;--okb:#2f8f4e}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{background:linear-gradient(135deg,var(--brand2),var(--brand));color:#fff;padding:18px 26px}header h1{margin:0;font-size:22px}header p{margin:4px 0 0;opacity:.9;font-size:13px}
+.shell{max-width:1450px;margin:auto;padding:24px}.card,.meta,.metric{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 2px 10px rgba(24,39,75,.05)}.card{padding:18px;margin-bottom:18px}
+.topbar{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:12px;margin-bottom:18px}.meta,.metric{padding:14px 16px}.meta b,.metric b{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}.meta span{font-weight:700}.metric strong{font-size:24px}
+input,select,textarea,button{font:inherit}input,select,textarea{border:1px solid #cfd7e3;border-radius:9px;padding:9px 10px;background:white;color:var(--text)}input[type=number]{width:105px}textarea{width:100%;min-height:74px}
+button,.btn{border:0;border-radius:9px;padding:10px 14px;cursor:pointer;font-weight:700;background:var(--brand);color:#fff;text-decoration:none;display:inline-block}.secondary{background:#eef2f7;color:#23324b}.ghost{background:#fff;border:1px solid var(--line);color:#23324b}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}th{position:sticky;top:0;background:#edf3f8;color:#334155;text-align:left;padding:10px;border-bottom:1px solid var(--line);z-index:1}td{padding:9px 10px;border-bottom:1px solid #edf0f4;vertical-align:top}tbody tr:hover{background:#fafcff}.table-wrap{max-height:540px;overflow:auto;border:1px solid var(--line);border-radius:12px}
+.small{font-size:12px;color:var(--muted)}.tag{display:inline-flex;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700}.ok{background:var(--ok);color:#246d3a}.warnTag{background:var(--warn);color:#7a5a00}.muted{background:#eef2f7;color:#586275}.sent{background:#e8f2fb;color:#225f8e}.review{background:#fff3d1;color:#7c5c00}.closed{background:#e7f6ec;color:#277242}.coverage{min-width:92px;text-align:center;cursor:pointer}.coverage.has{background:#e8f7ec}.coverage.partial{background:#fff5cc}.coverage.none{background:#f5f6f8;color:#9aa3af}.coverage.selected{outline:3px solid #1f5b8f;outline-offset:-3px}.coverage strong{display:block;font-size:13px}.coverage small{display:block;font-size:10px;color:#6b7280;margin-top:2px}.legend{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 14px}.legend span{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#586275}.dot{width:12px;height:12px;border-radius:3px;display:inline-block}.dot.green{background:#e8f7ec;border:1px solid #a9d9b7}.dot.yellow{background:#fff5cc;border:1px solid #e6d074}.dot.gray{background:#f5f6f8;border:1px solid #dfe5ee}
+.alert{margin-top:7px;padding:8px 10px;border-radius:8px;font-size:12px}.alert.warn{background:var(--warn);border-left:4px solid var(--warnb)}.alert.info{background:var(--soft);border-left:4px solid var(--brand)}.alert.danger{background:var(--danger);border-left:4px solid var(--dangerb)}
+.filters,.toolbar,.footer{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.pill{padding:7px 11px;border-radius:999px;background:#eef2f7;color:#314158;font-size:12px;font-weight:700;cursor:pointer}.pill.active{background:var(--brand);color:#fff}.footer{justify-content:flex-end;margin-top:16px}
+.hidden{display:none!important}.grid4{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:10px}.box{border:1px solid var(--line);border-radius:10px;padding:11px;background:#fafcff}.box b{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px}
+.login{max-width:500px;margin:48px auto}.status{padding:10px 12px;border-radius:10px;margin:10px 0;background:var(--ok)}.late{background:var(--warn)}
+@media(max-width:900px){.topbar,.grid4{grid-template-columns:1fr 1fr}.table-wrap{max-height:none}}@media(max-width:600px){.topbar,.grid4{grid-template-columns:1fr}}
+@media print{header,.no-print{display:none!important}.shell{padding:0}.card{box-shadow:none;border:0}}</style></head>
+<body><header><div style="display:flex;justify-content:space-between;align-items:center"><div><h1>Control Farmacia</h1><p>Pedido mensual de servicios</p></div><button class="secondary" id="logoutBtn">Salir</button></div></header>
+<div class="shell">
+<div class="filters no-print" style="margin-bottom:18px"><span class="pill active" data-view="current">Pedidos</span><span class="pill" data-view="review">Revisión historial</span><span class="pill" data-view="history">Historial</span><span class="pill" data-view="consumption">Control de consumo</span><span class="pill" data-view="config">Configuración</span></div>
+<section id="current"><div class="grid4" id="metrics"></div><div class="card"><h2>Pedidos</h2><div class="table-wrap"><table><thead><tr><th>Servicio</th><th>Periodo</th><th>Realizado por</th><th>Fecha</th><th>Estado</th><th>Plazo</th><th>Acción</th></tr></thead><tbody id="ordersBody"></tbody></table></div></div></section>
+<section id="detail" class="hidden"></section>
+<section id="review" class="hidden"><div class="card"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-end;flex-wrap:wrap"><div><h2 style="margin-bottom:4px">Revisión de historial</h2><div class="small">Cobertura histórica por servicio y mes. Esta vista es de revisión; no modifica datos.</div></div><div><label class="small" for="reviewYear">Año</label><br><select id="reviewYear"></select></div></div><div class="grid4" id="reviewMetrics" style="margin-top:14px"></div><div class="legend"><span><i class="dot green"></i>Con stock informado</span><span><i class="dot yellow"></i>Solo solicitud / stock parcial</span><span><i class="dot gray"></i>Sin registros históricos</span></div><div class="table-wrap" style="max-height:none"><table id="coverageTable"><thead id="coverageHead"></thead><tbody id="coverageBody"></tbody></table></div></div><div class="card" id="reviewDetailCard"><h3 id="reviewDetailTitle">Detalle del periodo</h3><div class="small" id="reviewDetailSub">Seleccione una celda con registros para revisar los insumos cargados.</div><div class="table-wrap" style="margin-top:12px;max-height:430px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Stock informado</th><th>Solicitud</th><th>Autorizado</th><th>Fuente</th></tr></thead><tbody id="reviewDetailBody"><tr><td colspan="6" class="small">Sin selección.</td></tr></tbody></table></div></div></section>
+<section id="history" class="hidden"><div class="card"><h2>Historial de pedidos cerrados</h2><div class="table-wrap"><table><thead><tr><th>Periodo</th><th>Servicio</th><th>Insumo</th><th>Unidad</th><th>Stock</th><th>Solicitado</th><th>Autorizado</th><th>Recepción</th></tr></thead><tbody id="historyBody"></tbody></table></div></div></section>
+<section id="consumption" class="hidden">
+<div class="card">
+  <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-end;flex-wrap:wrap">
+    <div><h2 style="margin-bottom:4px">Control de consumo</h2><div class="small">Calculado solo con periodos que tienen stock inicial, stock posterior y entregas autorizadas conocidas.</div></div>
+    <div class="filters">
+      <select id="consService" style="min-width:230px"><option value="all">Todos los servicios</option></select>
+      <input id="consSearch" placeholder="Buscar insumo" style="min-width:240px">
+    </div>
+  </div>
+  <div class="grid4" id="consMetrics" style="margin-top:14px"></div>
+  <div class="alert info"><b>Regla:</b> consumo = stock anterior + entregas autorizadas conocidas − stock posterior. Si una entrega histórica no está informada, el periodo no se usa para promedios.</div>
+  <div class="table-wrap" style="margin-top:14px;max-height:620px"><table><thead><tr><th>Servicio</th><th>Insumo</th><th>Unidad</th><th>Último stock</th><th>Último consumo válido</th><th>Promedio 3M</th><th>Cobertura</th><th>Estado</th></tr></thead><tbody id="consBody"></tbody></table></div>
+</div>
+</section>
+<section id="config" class="hidden"><div class="card"><h2>Configuración</h2><h3>Calendario</h3><div id="periods"></div><h3>Correos automáticos</h3><div class="grid4"><div class="box"><b>Aviso apertura</b><label><input id="openActive" type="checkbox"> Activo</label><br><input id="openDays" type="number" min="0" style="width:80px"> día(s) antes</div><div class="box"><b>Tipo de días</b><select id="openType"><option value="business">Hábiles</option><option value="calendar">Corridos</option></select></div><div class="box"><b>Recordatorio cierre</b><label><input id="closeActive" type="checkbox"> Activo</label><br><input id="closeDays" type="number" min="0" style="width:80px"> día(s) antes</div><div class="box"><b>Tipo de días</b><select id="closeType"><option value="business">Hábiles</option><option value="calendar">Corridos</option></select></div></div><div class="footer"><button id="saveConfig">Guardar configuración</button></div><div id="cfgmsg"></div></div></section>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://qomszvnpuhtlnrykcyxb.supabase.co";
+const SUPABASE_KEY = "sb_publishable_zhMUi-mweEAwW1Wpr4N6Dw_PGv8QNTN";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function esc(s){
+  return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+}
+function fmtDateTime(s){
+  if(!s) return "—";
+  return new Date(s).toLocaleString("es-CL");
+}
+function todayISO(){
+  const d=new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+</script>
+
+<script>
+let orders=[], periods=[], emailConfig={}, historical=[], services=[], activeOrder=null, reviewSelection=null;
+
+async function ensureAuth(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){location.href="farmacia-login.html";return false;}
+  return true;
+}
+async function loadAll(){
+  const [o,p,e,h,srv,it] = await Promise.all([
+    sb.from("orders").select("*,services(name),periods(label,year,month),order_lines(*,items(name,unit))").order("submitted_at",{ascending:false}),
+    sb.from("periods").select("*").order("year").order("month"),
+    sb.from("email_config").select("*"),
+    // Se consulta el histórico sin relaciones anidadas para evitar fallas de caché de esquema de PostgREST.
+    sb.from("historical_service_records").select("*").order("year").order("month"),
+    sb.from("services").select("id,name,active").eq("active",true).order("id"),
+    sb.from("items").select("id,name,unit")
+  ]);
+  if(o.error) throw o.error; if(p.error) throw p.error; if(e.error) throw e.error; if(h.error) throw h.error; if(srv.error) throw srv.error; if(it.error) throw it.error;
+  orders=o.data||[]; periods=p.data||[]; emailConfig=Object.fromEntries((e.data||[]).map(x=>[x.key,x])); services=srv.data||[];
+  const itemsById=Object.fromEntries((it.data||[]).map(x=>[String(x.id),x]));
+  const servicesById=Object.fromEntries(services.map(x=>[String(x.id),x]));
+  historical=(h.data||[]).map(r=>({
+    ...r,
+    items:itemsById[String(r.item_id)]||null,
+    services:servicesById[String(r.service_id)]||null
+  }));
+  renderAll();
+}
+function renderAll(){renderMetrics();renderOrders();renderReview();renderHistory();renderConsumption();renderConfig();}
+function renderMetrics(){
+  const expected=13, received=orders.length, pending=Math.max(0,expected-orders.filter(o=>o.status!=="Cerrado").length), late=orders.filter(o=>o.late).length;
+  document.getElementById("metrics").innerHTML=[["Esperados",expected],["Recibidos",received],["Fuera de plazo",late],["Cerrados",orders.filter(o=>o.status==="Cerrado").length]].map(v=>`<div class="metric"><b>${v[0]}</b><strong>${v[1]}</strong></div>`).join("");
+}
+function renderOrders(){
+  document.getElementById("ordersBody").innerHTML=orders.map(o=>`<tr><td><b>${esc(o.services?.name)}</b></td><td>${esc(o.periods?.label)}</td><td>${esc(o.requester_name)}</td><td>${fmtDateTime(o.submitted_at)}</td><td><span class="tag ${o.status==="Cerrado"?"closed":o.status==="En revisión"?"review":"sent"}">${esc(o.status)}</span></td><td>${o.late?'<span class="tag warnTag">FUERA DE PLAZO</span>':'<span class="tag ok">Dentro de plazo</span>'}</td><td><button data-id="${o.id}">Abrir</button></td></tr>`).join("");
+  document.querySelectorAll("#ordersBody button").forEach(b=>b.onclick=()=>openOrder(b.dataset.id));
+}
+async function openOrder(id){
+  activeOrder=orders.find(o=>o.id===id); if(!activeOrder)return;
+  if(activeOrder.status==="Enviado"){await sb.from("orders").update({status:"En revisión",reviewed_at:new Date().toISOString()}).eq("id",id);activeOrder.status="En revisión";}
+  showSection("detail");
+  const o=activeOrder;
+  document.getElementById("detail").innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between"><div><h2>Pedido — ${esc(o.services.name)}</h2><div class="small">${esc(o.periods.label)} · ${esc(o.status)}</div></div><button class="secondary" id="backDash">← Volver</button></div><div class="alert info">Farmacia modifica solo la cantidad autorizada. Se asume que entregado = autorizado.</div><div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Stock actual</th><th>Solicitado</th><th>Autorizado</th></tr></thead><tbody>${o.order_lines.map((l,i)=>`<tr data-id="${l.id}"><td>${esc(l.items.name)}</td><td>${esc(l.items.unit)}</td><td>${l.current_stock}</td><td>${l.requested}</td><td><input class="auth" type="number" min="0" value="${l.authorized??l.requested}"></td></tr>`).join("")}</tbody></table></div><br><label>Observación Farmacia</label><textarea id="obs">${esc(o.pharmacy_observation||"")}</textarea><br><br><label>Nombre de quien recibe</label><input id="receiver" style="width:320px" value="${esc(o.receiver_name||"")}"><div class="footer">${o.status!=="Cerrado"?'<button id="closeBtn">Confirmar entrega y cerrar</button>':'<button class="secondary" id="guideBtn">Generar / ver guía de entrega</button>'}</div><div id="detailMsg"></div></div>`;
+  document.getElementById("backDash").onclick=()=>{showSection("current");loadAll();};
+  if(o.status!=="Cerrado")document.getElementById("closeBtn").onclick=closeActive; else document.getElementById("guideBtn").onclick=showGuide;
+}
+async function closeActive(){
+  const receiver=document.getElementById("receiver").value.trim(); if(!receiver){document.getElementById("detailMsg").innerHTML='<div class="alert danger">Ingrese el nombre de quien recibe.</div>';return;}
+  const rows=[...document.querySelectorAll("#detail tbody tr")];
+  for(const tr of rows){const val=Number(tr.querySelector(".auth").value||0);const {error}=await sb.from("order_lines").update({authorized:val}).eq("id",tr.dataset.id);if(error){alert(error.message);return;}}
+  const now=new Date().toISOString();
+  const {error}=await sb.from("orders").update({status:"Cerrado",closed_at:now,received_at:now,receiver_name:receiver,pharmacy_observation:document.getElementById("obs").value}).eq("id",activeOrder.id);
+  if(error){alert(error.message);return;}
+  await loadAll(); openOrder(activeOrder.id);
+}
+function showGuide(){
+  const o=activeOrder;
+  document.getElementById("detail").innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between"><div><h2>Guía de entrega de insumos</h2></div><button class="secondary no-print" id="backOrder">← Volver</button></div><div class="grid4"><div class="box"><b>Servicio</b>${esc(o.services.name)}</div><div class="box"><b>Periodo</b>${esc(o.periods.label)}</div><div class="box"><b>Realizado por</b>${esc(o.requester_name)}</div><div class="box"><b>Recibido por</b>${esc(o.receiver_name)}</div><div class="box"><b>Fecha/hora</b>${fmtDateTime(o.received_at)}</div></div><div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Solicitado</th><th>Autorizado</th></tr></thead><tbody>${o.order_lines.map(l=>`<tr><td>${esc(l.items.name)}</td><td>${esc(l.items.unit)}</td><td>${l.requested}</td><td><b>${l.authorized??l.requested}</b></td></tr>`).join("")}</tbody></table></div><div class="footer no-print"><button onclick="window.print()">Imprimir guía</button></div></div>`;
+  document.getElementById("backOrder").onclick=()=>openOrder(o.id);
+}
+function monthName(m){return ["","Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][Number(m)]||m;}
+function renderReview(){
+  const yearSel=document.getElementById("reviewYear"); if(!yearSel)return;
+  const years=[...new Set(historical.map(r=>Number(r.year)).filter(Boolean))].sort((a,b)=>b-a);
+  if(!years.length)years.push(new Date().getFullYear());
+  const prev=Number(yearSel.value)||years[0];
+  yearSel.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join("");
+  yearSel.value=years.includes(prev)?String(prev):String(years[0]);
+  yearSel.onchange=()=>{reviewSelection=null;renderReview();};
+  const year=Number(yearSel.value);
+  const rows=historical.filter(r=>Number(r.year)===year);
+  const by={};
+  rows.forEach(r=>{const k=`${r.service_id}-${r.month}`;if(!by[k])by[k]={records:0,stock:0,requested:0,authorized:0};by[k].records++;if(r.current_stock!==null)by[k].stock++;if(r.requested!==null)by[k].requested++;if(r.authorized!==null)by[k].authorized++;});
+  const servicesWith=new Set(rows.map(r=>String(r.service_id))).size;
+  const coveredCells=Object.keys(by).length;
+  const stockCells=Object.values(by).filter(x=>x.stock>0).length;
+  document.getElementById("reviewMetrics").innerHTML=[
+    ["Servicios con histórico",`${servicesWith}/${services.length}`],
+    ["Registros cargados",rows.length],
+    ["Meses-servicio con datos",coveredCells],
+    ["Meses con algún stock",stockCells]
+  ].map(v=>`<div class="metric"><b>${v[0]}</b><strong>${v[1]}</strong></div>`).join("");
+  document.getElementById("coverageHead").innerHTML=`<tr><th style="min-width:210px">Servicio</th>${Array.from({length:12},(_,i)=>`<th>${monthName(i+1)}</th>`).join("")}</tr>`;
+  document.getElementById("coverageBody").innerHTML=services.map(srv=>{
+    const cells=Array.from({length:12},(_,i)=>{const m=i+1,k=`${srv.id}-${m}`,x=by[k];if(!x)return `<td class="coverage none" data-service="${srv.id}" data-month="${m}"><strong>—</strong><small>Sin datos</small></td>`;const cls=x.stock===x.records&&x.stock>0?"has":"partial";const sub=x.stock>0?`stock ${x.stock}/${x.records}`:"solo solicitud";const sel=reviewSelection&&Number(reviewSelection.service_id)===Number(srv.id)&&Number(reviewSelection.month)===m?" selected":"";return `<td class="coverage ${cls}${sel}" data-service="${srv.id}" data-month="${m}"><strong>${x.records}</strong><small>${sub}</small></td>`;}).join("");
+    return `<tr><td><b>${esc(srv.name)}</b></td>${cells}</tr>`;
+  }).join("");
+  document.querySelectorAll("#coverageBody .coverage").forEach(td=>td.onclick=()=>selectReviewCell(Number(td.dataset.service),Number(td.dataset.month),year));
+  if(reviewSelection&&Number(reviewSelection.year)===year)renderReviewDetail();else{document.getElementById("reviewDetailTitle").textContent="Detalle del periodo";document.getElementById("reviewDetailSub").textContent="Seleccione una celda con registros para revisar los insumos cargados.";document.getElementById("reviewDetailBody").innerHTML='<tr><td colspan="6" class="small">Sin selección.</td></tr>';}
+}
+function selectReviewCell(service_id,month,year){reviewSelection={service_id,month,year};renderReview();}
+function renderReviewDetail(){
+  const sel=reviewSelection;if(!sel)return;
+  const srv=services.find(s=>Number(s.id)===Number(sel.service_id));
+  const rows=historical.filter(r=>Number(r.service_id)===Number(sel.service_id)&&Number(r.year)===Number(sel.year)&&Number(r.month)===Number(sel.month)).sort((a,b)=>(a.items?.name||"").localeCompare(b.items?.name||"","es"));
+  document.getElementById("reviewDetailTitle").textContent=`${srv?.name||"Servicio"} — ${monthName(sel.month)} ${sel.year}`;
+  if(!rows.length){document.getElementById("reviewDetailSub").textContent="No existen registros históricos cargados para este servicio y mes.";document.getElementById("reviewDetailBody").innerHTML='<tr><td colspan="6" class="small">Sin registros.</td></tr>';return;}
+  const stockN=rows.filter(r=>r.current_stock!==null).length,reqN=rows.filter(r=>r.requested!==null).length;
+  document.getElementById("reviewDetailSub").textContent=`${rows.length} registro(s) · ${stockN} con stock informado · ${reqN} con solicitud.`;
+  document.getElementById("reviewDetailBody").innerHTML=rows.map(r=>`<tr><td>${esc(r.items?.name||"—")}</td><td>${esc(r.items?.unit||"—")}</td><td>${r.current_stock===null?'<span class="tag muted">Sin dato</span>':esc(r.current_stock)}</td><td>${r.requested===null?'<span class="tag muted">Sin dato</span>':esc(r.requested)}</td><td>${r.authorized===null?'<span class="tag muted">No informado</span>':esc(r.authorized)}</td><td><div>${esc(r.source_file||"—")}</div>${r.source_note?`<div class="small">${esc(r.source_note)}</div>`:""}</td></tr>`).join("");
+}
+function renderHistory(){
+  const rows=[];orders.filter(o=>o.status==="Cerrado").forEach(o=>o.order_lines.forEach(l=>rows.push(`<tr><td>${esc(o.periods.label)}</td><td>${esc(o.services.name)}</td><td>${esc(l.items.name)}</td><td>${esc(l.items.unit)}</td><td>${l.current_stock}</td><td>${l.requested}</td><td>${l.authorized??l.requested}</td><td>${esc(o.receiver_name)} · ${fmtDateTime(o.received_at)}</td></tr>`)));document.getElementById("historyBody").innerHTML=rows.join("");
+}
+function periodIndex(year,month){return Number(year)*12+(Number(month)-1);}
+function periodLabelShort(year,month){return `${monthName(month)} ${year}`;}
+function buildConsumptionRows(){
+  const groups={};
+  const ensure=(service_id,item_id,name,unit)=>{
+    const k=`${service_id}-${item_id}`;
+    if(!groups[k])groups[k]={service_id:Number(service_id),item_id:Number(item_id),name:name||"—",unit:unit||"—",observations:[],deliveries:[],unknownHistorical:[]};
+    return groups[k];
+  };
+
+  historical.forEach(r=>{
+    const g=ensure(r.service_id,r.item_id,r.items?.name,r.items?.unit);
+    const idx=periodIndex(r.year,r.month);
+    if(r.current_stock!==null)g.observations.push({idx,year:Number(r.year),month:Number(r.month),stock:Number(r.current_stock),source:"Histórico"});
+    if(r.authorized!==null)g.deliveries.push({idx,qty:Number(r.authorized),source:"Histórico"});
+    else g.unknownHistorical.push({idx,requested:r.requested===null?null:Number(r.requested)});
+  });
+
+  orders.filter(o=>o.status==="Cerrado").forEach(o=>{
+    const y=Number(o.periods?.year),m=Number(o.periods?.month),idx=periodIndex(y,m);
+    (o.order_lines||[]).forEach(l=>{
+      const g=ensure(o.service_id,l.item_id,l.items?.name,l.items?.unit);
+      if(l.current_stock!==null)g.observations.push({idx,year:y,month:m,stock:Number(l.current_stock),source:"Pedido"});
+      if(l.authorized!==null)g.deliveries.push({idx,qty:Number(l.authorized),source:"Pedido"});
+    });
+  });
+
+  const results=[];
+  Object.values(groups).forEach(g=>{
+    g.observations.sort((a,b)=>a.idx-b.idx);
+    g.deliveries.sort((a,b)=>a.idx-b.idx);
+    g.unknownHistorical.sort((a,b)=>a.idx-b.idx);
+    // Si hay dos observaciones del mismo periodo, conservar la más reciente agregada (pedido real sobre histórico).
+    const dedup=[];
+    g.observations.forEach(o=>{const pos=dedup.findIndex(x=>x.idx===o.idx);if(pos>=0)dedup[pos]=o;else dedup.push(o);});
+    g.observations=dedup.sort((a,b)=>a.idx-b.idx);
+    const intervals=[];
+    for(let i=0;i<g.observations.length-1;i++){
+      const a=g.observations[i],b=g.observations[i+1],months=b.idx-a.idx;
+      if(months<=0)continue;
+      const unknown=g.unknownHistorical.filter(x=>x.idx>=a.idx&&x.idx<b.idx);
+      if(unknown.length){intervals.push({valid:false,a,b,months,reason:"Entrega histórica no informada"});continue;}
+      const delivered=g.deliveries.filter(x=>x.idx>=a.idx&&x.idx<b.idx).reduce((sum,x)=>sum+x.qty,0);
+      const total=a.stock+delivered-b.stock;
+      if(total<0){intervals.push({valid:false,a,b,months,reason:"Resultado negativo; requiere revisión"});continue;}
+      intervals.push({valid:true,a,b,months,delivered,total,monthly:total/months});
+    }
+    const valid=intervals.filter(x=>x.valid);
+    // Cada intervalo válido representa N meses; se usa su equivalente mensual para completar hasta 3 meses válidos recientes.
+    const monthly=[];
+    valid.forEach(v=>{for(let j=0;j<v.months;j++)monthly.push({idx:v.a.idx+j+1,value:v.monthly});});
+    monthly.sort((a,b)=>a.idx-b.idx);
+    const last3=monthly.slice(-3);
+    const avg3=last3.length>=3?last3.reduce((s,x)=>s+x.value,0)/3:null;
+    const latestObs=g.observations.length?g.observations[g.observations.length-1]:null;
+    const lastValid=valid.length?valid[valid.length-1]:null;
+    let status="Historial insuficiente para calcular promedio y cobertura.";
+    let statusClass="muted";
+    if(g.observations.length<2)status="Pendiente próximo stock";
+    else if(!valid.length){
+      const reason=intervals.length?intervals[intervals.length-1].reason:"Datos insuficientes";
+      status=reason;
+      statusClass=reason.includes("negativo")?"warnTag":"muted";
+    } else if(avg3===null)status=`${monthly.length}/3 mes(es) válidos para promedio 3M`;
+    else {status="Cálculo disponible";statusClass="ok";}
+    const coverage=(avg3!==null&&avg3>0&&latestObs)?latestObs.stock/avg3:null;
+    results.push({...g,latestObs,lastValid,validMonths:monthly.length,avg3,coverage,status,statusClass,intervals});
+  });
+  return results;
+}
+function renderConsumption(){
+  const body=document.getElementById("consBody"),serviceSel=document.getElementById("consService"),search=document.getElementById("consSearch");
+  if(!body||!serviceSel||!search)return;
+  const all=buildConsumptionRows();
+  const previous=serviceSel.value||"all";
+  serviceSel.innerHTML='<option value="all">Todos los servicios</option>'+services.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("");
+  serviceSel.value=["all",...services.map(s=>String(s.id))].includes(previous)?previous:"all";
+  serviceSel.onchange=renderConsumption;search.oninput=renderConsumption;
+  const q=search.value.trim().toLowerCase(),sid=serviceSel.value;
+  const rows=all.filter(x=>(sid==="all"||String(x.service_id)===sid)&&(!q||x.name.toLowerCase().includes(q))).sort((a,b)=>{
+    const sa=services.find(s=>Number(s.id)===a.service_id)?.name||"",sb=services.find(s=>Number(s.id)===b.service_id)?.name||"";
+    return sa.localeCompare(sb,"es")||a.name.localeCompare(b.name,"es");
+  });
+  const available=all.filter(x=>x.avg3!==null).length;
+  const withValid=all.filter(x=>x.validMonths>0).length;
+  const pending=all.filter(x=>x.observations.length<2).length;
+  const review=all.filter(x=>x.intervals.some(i=>!i.valid)).length;
+  document.getElementById("consMetrics").innerHTML=[
+    ["Con promedio 3M",available],["Con consumo válido",withValid],["Pendiente próximo stock",pending],["Requieren revisión",review]
+  ].map(v=>`<div class="metric"><b>${v[0]}</b><strong>${v[1]}</strong></div>`).join("");
+  if(!rows.length){body.innerHTML='<tr><td colspan="8" class="small">No hay registros para el filtro seleccionado.</td></tr>';return;}
+  body.innerHTML=rows.map(x=>{
+    const srv=services.find(s=>Number(s.id)===x.service_id)?.name||"—";
+    const stock=x.latestObs?`${Number(x.latestObs.stock).toLocaleString("es-CL")}<div class="small">${periodLabelShort(x.latestObs.year,x.latestObs.month)}</div>`:'<span class="tag muted">Sin stock</span>';
+    const last=x.lastValid?`${x.lastValid.monthly.toLocaleString("es-CL",{maximumFractionDigits:2})}<div class="small">equiv. mensual · ${x.lastValid.months} mes(es)</div>`:'<span class="tag muted">Sin consumo válido</span>';
+    const avg=x.avg3===null?'<span class="tag muted">No disponible</span>':`<b>${x.avg3.toLocaleString("es-CL",{maximumFractionDigits:2})}</b>`;
+    let cov='<span class="tag muted">No disponible</span>';
+    if(x.coverage!==null){const c=x.coverage;cov=`<b>${c.toLocaleString("es-CL",{maximumFractionDigits:1})} meses</b>`;if(c>=3)cov+=`<div class="alert warn">Cobertura elevada</div>`;}
+    return `<tr><td><b>${esc(srv)}</b></td><td>${esc(x.name)}</td><td>${esc(x.unit)}</td><td>${stock}</td><td>${last}</td><td>${avg}</td><td>${cov}</td><td><span class="tag ${x.statusClass}">${esc(x.status)}</span></td></tr>`;
+  }).join("");
+}
+function renderConfig(){
+  document.getElementById("periods").innerHTML=periods.map(p=>`<div class="box" style="margin-bottom:8px"><b>${esc(p.label)}</b> Apertura: ${p.open_date} · Cierre: ${p.close_date}</div>`).join("");
+  const op=emailConfig.opening,cl=emailConfig.closing;if(op){openActive.checked=op.active;openDays.value=op.days_before;openType.value=op.day_type}if(cl){closeActive.checked=cl.active;closeDays.value=cl.days_before;closeType.value=cl.day_type}
+}
+document.getElementById("saveConfig").onclick=async()=>{
+ const updates=[{key:"opening",active:openActive.checked,days_before:Number(openDays.value||0),day_type:openType.value},{key:"closing",active:closeActive.checked,days_before:Number(closeDays.value||0),day_type:closeType.value}];
+ for(const u of updates){const {error}=await sb.from("email_config").update(u).eq("key",u.key);if(error){alert(error.message);return;}}
+ document.getElementById("cfgmsg").innerHTML='<div class="status">Configuración guardada.</div>';await loadAll();
+};
+function showSection(v){["current","detail","review","history","consumption","config"].forEach(id=>document.getElementById(id).classList.toggle("hidden",id!==v));document.querySelectorAll(".pill").forEach(p=>p.classList.toggle("active",p.dataset.view===v));}
+document.querySelectorAll(".pill").forEach(p=>p.onclick=()=>showSection(p.dataset.view));
+document.getElementById("logoutBtn").onclick=async()=>{await sb.auth.signOut();location.href="index.html";};
+(async()=>{if(await ensureAuth()){try{await loadAll()}catch(e){console.error(e);alert("Error al cargar Control Farmacia: "+e.message);const m=document.getElementById("reviewMetrics");if(m)m.innerHTML=`<div class="alert danger" style="grid-column:1/-1">No fue posible cargar el historial: ${esc(e.message)}</div>`;}}})();
+</script></body></html>
