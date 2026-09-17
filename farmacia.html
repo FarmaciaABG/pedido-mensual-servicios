@@ -4,7 +4,7 @@ header{background:linear-gradient(135deg,var(--brand2),var(--brand));color:#fff;
 .shell{max-width:1450px;margin:auto;padding:24px}.card,.meta,.metric{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 2px 10px rgba(24,39,75,.05)}.card{padding:18px;margin-bottom:18px}
 .topbar{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:12px;margin-bottom:18px}.meta,.metric{padding:14px 16px}.meta b,.metric b{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}.meta span{font-weight:700}.metric strong{font-size:24px}
 input,select,textarea,button{font:inherit}input,select,textarea{border:1px solid #cfd7e3;border-radius:9px;padding:9px 10px;background:white;color:var(--text)}input[type=number]{width:105px}textarea{width:100%;min-height:74px}
-button,.btn{border:0;border-radius:9px;padding:10px 14px;cursor:pointer;font-weight:700;background:var(--brand);color:#fff;text-decoration:none;display:inline-block}.secondary{background:#eef2f7;color:#23324b}.ghost{background:#fff;border:1px solid var(--line);color:#23324b}
+button,.btn{border:0;border-radius:9px;padding:10px 14px;cursor:pointer;font-weight:700;background:var(--brand);color:#fff;text-decoration:none;display:inline-block}.secondary{background:#eef2f7;color:#23324b}.dangerBtn{background:#b42318;color:#fff}.ghost{background:#fff;border:1px solid var(--line);color:#23324b}
 table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}th{position:sticky;top:0;background:#edf3f8;color:#334155;text-align:left;padding:10px;border-bottom:1px solid var(--line);z-index:1}td{padding:9px 10px;border-bottom:1px solid #edf0f4;vertical-align:top}tbody tr:hover{background:#fafcff}.table-wrap{max-height:540px;overflow:auto;border:1px solid var(--line);border-radius:12px}
 .small{font-size:12px;color:var(--muted)}.tag{display:inline-flex;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700}.ok{background:var(--ok);color:#246d3a}.warnTag{background:var(--warn);color:#7a5a00}.muted{background:#eef2f7;color:#586275}.sent{background:#e8f2fb;color:#225f8e}.review{background:#fff3d1;color:#7c5c00}.closed{background:#e7f6ec;color:#277242}.partialStatus{background:#fff3d1;color:#7c5c00}.coverage{min-width:92px;text-align:center;cursor:pointer}.coverage.has{background:#e8f7ec}.coverage.partial{background:#fff5cc}.coverage.none{background:#f5f6f8;color:#9aa3af}.coverage.selected{outline:3px solid #1f5b8f;outline-offset:-3px}.coverage strong{display:block;font-size:13px}.coverage small{display:block;font-size:10px;color:#6b7280;margin-top:2px}.legend{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 14px}.legend span{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#586275}.dot{width:12px;height:12px;border-radius:3px;display:inline-block}.dot.green{background:#e8f7ec;border:1px solid #a9d9b7}.dot.yellow{background:#fff5cc;border:1px solid #e6d074}.dot.gray{background:#f5f6f8;border:1px solid #dfe5ee}
 .alert{margin-top:7px;padding:8px 10px;border-radius:8px;font-size:12px}.alert.warn{background:var(--warn);border-left:4px solid var(--warnb)}.alert.info{background:var(--soft);border-left:4px solid var(--brand)}.alert.danger{background:var(--danger);border-left:4px solid var(--dangerb)}
@@ -143,15 +143,41 @@ async function openOrder(id){
   <div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Stock actual</th><th>Solicitado</th><th>Autorizado total</th><th>Entregado acumulado</th><th>Saldo pendiente</th>${closed?'':'<th>Entregar ahora</th>'}</tr></thead><tbody>${o.order_lines.map(l=>{const del=deliveredForLine(l.id),auth=Number(l.authorized??l.requested??0),pend=Math.max(0,auth-del);return `<tr data-id="${l.id}" data-delivered="${del}" data-requested="${l.requested}"><td>${esc(l.items.name)}</td><td>${esc(l.items.unit)}</td><td>${l.current_stock}</td><td>${l.requested}</td><td>${closed?`<b>${auth}</b>`:`<input class="auth" type="number" min="0" value="${auth}">`}</td><td><b>${del}</b></td><td class="pendingCell">${pend?`<span class="tag warnTag">${pend}</span>`:'<span class="tag ok">0</span>'}</td>${closed?'':`<td><input class="deliverNow" type="number" min="0" value="0"></td>`}</tr>`}).join("")}</tbody></table></div>
   <br><label>Observación Farmacia</label><textarea id="obs" ${closed?'disabled':''}>${esc(o.pharmacy_observation||"")}</textarea>
   ${closed?'':`<br><br><label>Nombre de quien recibe esta entrega</label><input id="receiver" style="width:320px" value="">`}
-  <div class="footer">${closed?'<button class="secondary" id="guideBtn">Generar / ver guía de entrega</button>':'<button class="secondary" id="saveAuthBtn">Guardar autorización</button><button id="deliverBtn">Registrar entrega</button>'}</div><div id="detailMsg"></div></div>
+  <div class="footer">${closed?'<button class="secondary" id="guideBtn">Generar / ver guía de entrega</button>':'<button class="secondary" id="saveAuthBtn">Guardar autorización</button><button id="deliverBtn">Registrar entrega</button>'}<button class="dangerBtn" id="deleteOrderBtn">Eliminar pedido</button></div><div class="small" style="margin-top:8px">Eliminar está disponible solo en Control Farmacia. Al confirmar se borran también las líneas y entregas asociadas, y el servicio queda habilitado para enviar un nuevo pedido del mismo periodo.</div><div id="detailMsg"></div></div>
   <div class="card"><h3>Registro de entregas</h3><div class="table-wrap"><table><thead><tr><th>Fecha/hora</th><th>Recibido por</th><th>Detalle</th><th>Observación</th></tr></thead><tbody>${deliveryHistory.length?deliveryHistory.map(ev=>{const lines=deliveryLines.filter(dl=>dl.delivery_event_id===ev.id);const detail=lines.map(dl=>{const ol=o.order_lines.find(x=>Number(x.id)===Number(dl.order_line_id));return `${esc(ol?.items?.name||"Insumo")}: <b>${Number(dl.quantity)}</b>`}).join("<br>");return `<tr><td>${fmtDateTime(ev.delivered_at)}</td><td>${esc(ev.receiver_name)}</td><td>${detail||"—"}</td><td>${esc(ev.pharmacy_observation||"—")}</td></tr>`}).join(""):'<tr><td colspan="4" class="small">Todavía no se han registrado entregas.</td></tr>'}</tbody></table></div></div>`;
   document.getElementById("backDash").onclick=()=>{showSection("current");loadAll();};
+  document.getElementById("deleteOrderBtn").onclick=deleteActiveOrder;
   if(closed)document.getElementById("guideBtn").onclick=showGuide;
   else{
     document.getElementById("saveAuthBtn").onclick=saveAuthorization;
     document.getElementById("deliverBtn").onclick=registerDelivery;
     document.querySelectorAll("#detail .auth").forEach(inp=>inp.oninput=refreshPendingPreview);
     document.querySelectorAll("#detail .deliverNow").forEach(inp=>inp.oninput=refreshPendingPreview);
+  }
+}
+async function deleteActiveOrder(){
+  if(!activeOrder)return;
+  const label=`${activeOrder.services?.name||"Servicio"} — ${activeOrder.periods?.label||"Periodo"}`;
+  const ok=confirm(`¿Eliminar definitivamente el pedido de ${label}?\n\nEsto borrará también sus entregas registradas y dejará al servicio habilitado para enviar un nuevo pedido del mismo periodo.`);
+  if(!ok)return;
+  const code=prompt('Para confirmar, escriba ELIMINAR:');
+  if(code!=="ELIMINAR"){
+    document.getElementById("detailMsg").innerHTML='<div class="alert warn">El pedido no fue eliminado.</div>';
+    return;
+  }
+  const btn=document.getElementById("deleteOrderBtn"); if(btn)btn.disabled=true;
+  const id=activeOrder.id;
+  try{
+    const {error}=await sb.from("orders").delete().eq("id",id);
+    if(error)throw error;
+    activeOrder=null;
+    await loadAll();
+    showSection("current");
+    const current=document.getElementById("current");
+    if(current)current.insertAdjacentHTML("afterbegin",'<div class="status">Pedido eliminado correctamente. El servicio puede volver a enviar un pedido para ese periodo.</div>');
+  }catch(e){
+    if(btn)btn.disabled=false;
+    document.getElementById("detailMsg").innerHTML=`<div class="alert danger">No fue posible eliminar el pedido: ${esc(e.message)}</div>`;
   }
 }
 function refreshPendingPreview(){
