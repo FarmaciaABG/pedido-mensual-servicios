@@ -6,7 +6,7 @@ header{background:linear-gradient(135deg,var(--brand2),var(--brand));color:#fff;
 input,select,textarea,button{font:inherit}input,select,textarea{border:1px solid #cfd7e3;border-radius:9px;padding:9px 10px;background:white;color:var(--text)}input[type=number]{width:105px}textarea{width:100%;min-height:74px}
 button,.btn{border:0;border-radius:9px;padding:10px 14px;cursor:pointer;font-weight:700;background:var(--brand);color:#fff;text-decoration:none;display:inline-block}.secondary{background:#eef2f7;color:#23324b}.ghost{background:#fff;border:1px solid var(--line);color:#23324b}
 table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}th{position:sticky;top:0;background:#edf3f8;color:#334155;text-align:left;padding:10px;border-bottom:1px solid var(--line);z-index:1}td{padding:9px 10px;border-bottom:1px solid #edf0f4;vertical-align:top}tbody tr:hover{background:#fafcff}.table-wrap{max-height:540px;overflow:auto;border:1px solid var(--line);border-radius:12px}
-.small{font-size:12px;color:var(--muted)}.tag{display:inline-flex;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700}.ok{background:var(--ok);color:#246d3a}.warnTag{background:var(--warn);color:#7a5a00}.muted{background:#eef2f7;color:#586275}.sent{background:#e8f2fb;color:#225f8e}.review{background:#fff3d1;color:#7c5c00}.closed{background:#e7f6ec;color:#277242}.coverage{min-width:92px;text-align:center;cursor:pointer}.coverage.has{background:#e8f7ec}.coverage.partial{background:#fff5cc}.coverage.none{background:#f5f6f8;color:#9aa3af}.coverage.selected{outline:3px solid #1f5b8f;outline-offset:-3px}.coverage strong{display:block;font-size:13px}.coverage small{display:block;font-size:10px;color:#6b7280;margin-top:2px}.legend{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 14px}.legend span{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#586275}.dot{width:12px;height:12px;border-radius:3px;display:inline-block}.dot.green{background:#e8f7ec;border:1px solid #a9d9b7}.dot.yellow{background:#fff5cc;border:1px solid #e6d074}.dot.gray{background:#f5f6f8;border:1px solid #dfe5ee}
+.small{font-size:12px;color:var(--muted)}.tag{display:inline-flex;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700}.ok{background:var(--ok);color:#246d3a}.warnTag{background:var(--warn);color:#7a5a00}.muted{background:#eef2f7;color:#586275}.sent{background:#e8f2fb;color:#225f8e}.review{background:#fff3d1;color:#7c5c00}.closed{background:#e7f6ec;color:#277242}.partialStatus{background:#fff3d1;color:#7c5c00}.coverage{min-width:92px;text-align:center;cursor:pointer}.coverage.has{background:#e8f7ec}.coverage.partial{background:#fff5cc}.coverage.none{background:#f5f6f8;color:#9aa3af}.coverage.selected{outline:3px solid #1f5b8f;outline-offset:-3px}.coverage strong{display:block;font-size:13px}.coverage small{display:block;font-size:10px;color:#6b7280;margin-top:2px}.legend{display:flex;gap:10px;flex-wrap:wrap;margin:10px 0 14px}.legend span{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#586275}.dot{width:12px;height:12px;border-radius:3px;display:inline-block}.dot.green{background:#e8f7ec;border:1px solid #a9d9b7}.dot.yellow{background:#fff5cc;border:1px solid #e6d074}.dot.gray{background:#f5f6f8;border:1px solid #dfe5ee}
 .alert{margin-top:7px;padding:8px 10px;border-radius:8px;font-size:12px}.alert.warn{background:var(--warn);border-left:4px solid var(--warnb)}.alert.info{background:var(--soft);border-left:4px solid var(--brand)}.alert.danger{background:var(--danger);border-left:4px solid var(--dangerb)}
 .filters,.toolbar,.footer{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.pill{padding:7px 11px;border-radius:999px;background:#eef2f7;color:#314158;font-size:12px;font-weight:700;cursor:pointer}.pill.active{background:var(--brand);color:#fff}.footer{justify-content:flex-end;margin-top:16px}
 .hidden{display:none!important}.grid4{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:10px}.box{border:1px solid var(--line);border-radius:10px;padding:11px;background:#fafcff}.box b{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px}
@@ -16,21 +16,21 @@ table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}th{pos
 <body><header><div style="display:flex;justify-content:space-between;align-items:center"><div><h1>Control Farmacia</h1><p>Pedido mensual de servicios</p></div><button class="secondary" id="logoutBtn">Salir</button></div></header>
 <div class="shell">
 <div class="filters no-print" style="margin-bottom:18px"><span class="pill active" data-view="current">Pedidos</span><span class="pill" data-view="review">Revisión historial</span><span class="pill" data-view="history">Historial</span><span class="pill" data-view="consumption">Control de consumo</span><span class="pill" data-view="config">Configuración</span></div>
-<section id="current"><div class="grid4" id="metrics"></div><div class="card"><h2>Pedidos</h2><div class="table-wrap"><table><thead><tr><th>Servicio</th><th>Periodo</th><th>Realizado por</th><th>Fecha</th><th>Estado</th><th>Plazo</th><th>Acción</th></tr></thead><tbody id="ordersBody"></tbody></table></div></div></section>
+<section id="current"><div class="grid4" id="metrics"></div><div class="card"><h2>Pedidos</h2><div class="table-wrap"><table><thead><tr><th>Servicio</th><th>Periodo</th><th>Realizado por</th><th>Fecha</th><th>Estado</th><th>Plazo</th><th>Acción</th></tr></thead><tbody id="ordersBody"></tbody></table></div></div><div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap"><div><h2 style="margin-bottom:4px">Pendientes de entrega</h2><div class="small">Saldos de pedidos con entregas parciales. Desde aquí puede volver al mismo pedido y registrar una entrega adicional.</div></div><span id="pendingDeliveryCount" class="tag warnTag">0 pendientes</span></div><div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Servicio</th><th>Periodo</th><th>Insumo</th><th>Solicitado</th><th>Autorizado</th><th>Entregado</th><th>Saldo pendiente</th><th>Acción</th></tr></thead><tbody id="pendingDeliveryBody"></tbody></table></div></div></section>
 <section id="detail" class="hidden"></section>
 <section id="review" class="hidden"><div class="card"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-end;flex-wrap:wrap"><div><h2 style="margin-bottom:4px">Revisión de historial</h2><div class="small">Cobertura histórica por servicio y mes. Esta vista es de revisión; no modifica datos.</div></div><div><label class="small" for="reviewYear">Año</label><br><select id="reviewYear"></select></div></div><div class="grid4" id="reviewMetrics" style="margin-top:14px"></div><div class="legend"><span><i class="dot green"></i>Con stock informado</span><span><i class="dot yellow"></i>Solo solicitud / stock parcial</span><span><i class="dot gray"></i>Sin registros históricos</span></div><div class="table-wrap" style="max-height:none"><table id="coverageTable"><thead id="coverageHead"></thead><tbody id="coverageBody"></tbody></table></div></div><div class="card" id="reviewDetailCard"><h3 id="reviewDetailTitle">Detalle del periodo</h3><div class="small" id="reviewDetailSub">Seleccione una celda con registros para revisar los insumos cargados.</div><div class="table-wrap" style="margin-top:12px;max-height:430px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Stock informado</th><th>Solicitud</th><th>Autorizado</th><th>Fuente</th></tr></thead><tbody id="reviewDetailBody"><tr><td colspan="6" class="small">Sin selección.</td></tr></tbody></table></div></div></section>
-<section id="history" class="hidden"><div class="card"><h2>Historial de pedidos cerrados</h2><div class="table-wrap"><table><thead><tr><th>Periodo</th><th>Servicio</th><th>Insumo</th><th>Unidad</th><th>Stock</th><th>Solicitado</th><th>Autorizado</th><th>Recepción</th></tr></thead><tbody id="historyBody"></tbody></table></div></div></section>
+<section id="history" class="hidden"><div class="card"><h2>Historial de pedidos cerrados</h2><div class="table-wrap"><table><thead><tr><th>Periodo</th><th>Servicio</th><th>Insumo</th><th>Unidad</th><th>Stock</th><th>Solicitado</th><th>Autorizado</th><th>Entregado</th><th>Saldo</th><th>Última entrega</th></tr></thead><tbody id="historyBody"></tbody></table></div></div></section>
 <section id="consumption" class="hidden">
 <div class="card">
   <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-end;flex-wrap:wrap">
-    <div><h2 style="margin-bottom:4px">Control de consumo</h2><div class="small">Calculado solo con periodos que tienen stock inicial, stock posterior y entregas autorizadas conocidas.</div></div>
+    <div><h2 style="margin-bottom:4px">Control de consumo</h2><div class="small">Calculado solo con periodos que tienen stock inicial, stock posterior y entregas efectivamente registradas.</div></div>
     <div class="filters">
       <select id="consService" style="min-width:230px"><option value="all">Todos los servicios</option></select>
       <input id="consSearch" placeholder="Buscar insumo" style="min-width:240px">
     </div>
   </div>
   <div class="grid4" id="consMetrics" style="margin-top:14px"></div>
-  <div class="alert info"><b>Regla:</b> consumo = stock anterior + entregas autorizadas conocidas − stock posterior. Si una entrega histórica no está informada, el periodo no se usa para promedios.</div>
+  <div class="alert info"><b>Regla:</b> consumo = stock anterior + entregas efectivamente registradas − stock posterior. Los históricos sin cantidad entregada conocida no se usan para promedios.</div>
   <div class="table-wrap" style="margin-top:14px;max-height:620px"><table><thead><tr><th>Servicio</th><th>Insumo</th><th>Último stock</th><th>Última entrega autorizada</th><th>Consumo último periodo</th><th>Promedio 3M</th><th>Cobertura</th><th>Motivo / estado</th></tr></thead><tbody id="consBody"></tbody></table></div>
 </div>
 </section>
@@ -57,7 +57,7 @@ function todayISO(){
 </script>
 
 <script>
-let orders=[], periods=[], emailConfig={}, historical=[], services=[], activeOrder=null, reviewSelection=null;
+let orders=[], periods=[], emailConfig={}, historical=[], services=[], deliveryEvents=[], deliveryLines=[], activeOrder=null, reviewSelection=null;
 
 async function ensureAuth(){
   const {data:{session}}=await sb.auth.getSession();
@@ -65,56 +65,129 @@ async function ensureAuth(){
   return true;
 }
 async function loadAll(){
-  const [o,p,e,h,srv,it] = await Promise.all([
+  const [o,p,e,h,srv,it,de,dl] = await Promise.all([
     sb.from("orders").select("*,services(name),periods(label,year,month),order_lines(*,items(name,unit))").order("submitted_at",{ascending:false}),
     sb.from("periods").select("*").order("year").order("month"),
     sb.from("email_config").select("*"),
-    // Se consulta el histórico sin relaciones anidadas para evitar fallas de caché de esquema de PostgREST.
     sb.from("historical_service_records").select("*").order("year").order("month"),
     sb.from("services").select("id,name,active").eq("active",true).order("id"),
-    sb.from("items").select("id,name,unit")
+    sb.from("items").select("id,name,unit"),
+    sb.from("delivery_events").select("*").order("delivered_at",{ascending:true}),
+    sb.from("delivery_lines").select("*").order("id",{ascending:true})
   ]);
-  if(o.error) throw o.error; if(p.error) throw p.error; if(e.error) throw e.error; if(h.error) throw h.error; if(srv.error) throw srv.error; if(it.error) throw it.error;
+  for(const r of [o,p,e,h,srv,it,de,dl]) if(r.error) throw r.error;
   orders=o.data||[]; periods=p.data||[]; emailConfig=Object.fromEntries((e.data||[]).map(x=>[x.key,x])); services=srv.data||[];
+  deliveryEvents=de.data||[]; deliveryLines=dl.data||[];
   const itemsById=Object.fromEntries((it.data||[]).map(x=>[String(x.id),x]));
   const servicesById=Object.fromEntries(services.map(x=>[String(x.id),x]));
-  historical=(h.data||[]).map(r=>({
-    ...r,
-    items:itemsById[String(r.item_id)]||null,
-    services:servicesById[String(r.service_id)]||null
-  }));
+  historical=(h.data||[]).map(r=>({...r,items:itemsById[String(r.item_id)]||null,services:servicesById[String(r.service_id)]||null}));
   renderAll();
 }
-function renderAll(){renderMetrics();renderOrders();renderReview();renderHistory();renderConsumption();renderConfig();}
+function renderAll(){renderMetrics();renderOrders();renderPendingDeliveries();renderReview();renderHistory();renderConsumption();renderConfig();}
+function getDashboardPeriod(){
+  const activePeriods=periods.filter(p=>p.active!==false);
+  if(!activePeriods.length)return null;
+  const today=todayISO();
+  // Misma lógica del flujo solicitante: primer periodo cuyo cierre aún no ha pasado.
+  const current=activePeriods.find(p=>!p.close_date || today<=p.close_date);
+  return current||activePeriods[activePeriods.length-1];
+}
 function renderMetrics(){
-  const expected=13, received=orders.length, pending=Math.max(0,expected-orders.filter(o=>o.status!=="Cerrado").length), late=orders.filter(o=>o.late).length;
-  document.getElementById("metrics").innerHTML=[["Esperados",expected],["Recibidos",received],["Fuera de plazo",late],["Cerrados",orders.filter(o=>o.status==="Cerrado").length]].map(v=>`<div class="metric"><b>${v[0]}</b><strong>${v[1]}</strong></div>`).join("");
+  const currentPeriod=getDashboardPeriod();
+  const expected=services.length||13;
+  const currentOrders=currentPeriod
+    ? orders.filter(o=>Number(o.period_id)===Number(currentPeriod.id))
+    : [];
+  const received=currentOrders.length;
+  const late=currentOrders.filter(o=>o.late).length;
+  const closed=currentOrders.filter(o=>o.status==="Cerrado").length;
+  const pending=Math.max(0,expected-received);
+  const periodLabel=currentPeriod?.label||"Sin periodo configurado";
+  document.getElementById("metrics").innerHTML=[
+    ["Periodo",periodLabel],
+    ["Esperados",expected],
+    ["Recibidos",received],
+    ["Pendientes",pending],
+    ["Fuera de plazo",late],
+    ["Cerrados",closed]
+  ].map(v=>`<div class="metric"><b>${v[0]}</b><strong>${v[1]}</strong></div>`).join("");
+}
+function eventById(id){return deliveryEvents.find(e=>e.id===id)||null;}
+function deliveredForLine(lineId){return deliveryLines.filter(x=>Number(x.order_line_id)===Number(lineId)).reduce((a,x)=>a+Number(x.quantity||0),0);}
+function deliveryRowsForOrder(orderId){
+  const eventIds=new Set(deliveryEvents.filter(e=>e.order_id===orderId).map(e=>e.id));
+  return deliveryLines.filter(l=>eventIds.has(l.delivery_event_id));
+}
+function pendingForLine(l){const auth=Number(l.authorized??l.requested??0),del=deliveredForLine(l.id);return Math.max(0,auth-del);}
+function renderPendingDeliveries(){
+  const rows=[];
+  orders.forEach(o=>(o.order_lines||[]).forEach(l=>{const delivered=deliveredForLine(l.id),auth=Number(l.authorized??l.requested??0),pending=Math.max(0,auth-delivered);if(pending>0&&delivered>0)rows.push({o,l,delivered,auth,pending});}));
+  document.getElementById("pendingDeliveryCount").textContent=`${rows.length} pendiente${rows.length===1?"":"s"}`;
+  const body=document.getElementById("pendingDeliveryBody");
+  if(!rows.length){body.innerHTML='<tr><td colspan="8" class="small">No hay saldos pendientes de entrega.</td></tr>';return;}
+  body.innerHTML=rows.map(x=>`<tr><td><b>${esc(x.o.services?.name||"—")}</b></td><td>${esc(x.o.periods?.label||"—")}</td><td>${esc(x.l.items?.name||"—")}</td><td>${x.l.requested}</td><td>${x.auth}</td><td><b>${x.delivered}</b></td><td><span class="tag warnTag">${x.pending}</span></td><td><button data-order="${x.o.id}">Abrir pedido</button></td></tr>`).join("");
+  document.querySelectorAll("#pendingDeliveryBody button").forEach(b=>b.onclick=()=>openOrder(b.dataset.order));
 }
 function renderOrders(){
-  document.getElementById("ordersBody").innerHTML=orders.map(o=>`<tr><td><b>${esc(o.services?.name)}</b></td><td>${esc(o.periods?.label)}</td><td>${esc(o.requester_name)}</td><td>${fmtDateTime(o.submitted_at)}</td><td><span class="tag ${o.status==="Cerrado"?"closed":o.status==="En revisión"?"review":"sent"}">${esc(o.status)}</span></td><td>${o.late?'<span class="tag warnTag">FUERA DE PLAZO</span>':'<span class="tag ok">Dentro de plazo</span>'}</td><td><button data-id="${o.id}">Abrir</button></td></tr>`).join("");
+  document.getElementById("ordersBody").innerHTML=orders.map(o=>{const cls=o.status==="Cerrado"?"closed":o.status==="Entrega parcial"?"partialStatus":o.status==="En revisión"?"review":"sent";return `<tr><td><b>${esc(o.services?.name)}</b></td><td>${esc(o.periods?.label)}</td><td>${esc(o.requester_name)}</td><td>${fmtDateTime(o.submitted_at)}</td><td><span class="tag ${cls}">${esc(o.status)}</span></td><td>${o.late?'<span class="tag warnTag">FUERA DE PLAZO</span>':'<span class="tag ok">Dentro de plazo</span>'}</td><td><button data-id="${o.id}">Abrir</button></td></tr>`}).join("");
   document.querySelectorAll("#ordersBody button").forEach(b=>b.onclick=()=>openOrder(b.dataset.id));
 }
 async function openOrder(id){
   activeOrder=orders.find(o=>o.id===id); if(!activeOrder)return;
   if(activeOrder.status==="Enviado"){await sb.from("orders").update({status:"En revisión",reviewed_at:new Date().toISOString()}).eq("id",id);activeOrder.status="En revisión";}
   showSection("detail");
-  const o=activeOrder;
-  document.getElementById("detail").innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between"><div><h2>Pedido — ${esc(o.services.name)}</h2><div class="small">${esc(o.periods.label)} · ${esc(o.status)}</div></div><button class="secondary" id="backDash">← Volver</button></div><div class="alert info">Farmacia modifica solo la cantidad autorizada. Se asume que entregado = autorizado.</div><div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Stock actual</th><th>Solicitado</th><th>Autorizado</th></tr></thead><tbody>${o.order_lines.map((l,i)=>`<tr data-id="${l.id}"><td>${esc(l.items.name)}</td><td>${esc(l.items.unit)}</td><td>${l.current_stock}</td><td>${l.requested}</td><td><input class="auth" type="number" min="0" value="${l.authorized??l.requested}"></td></tr>`).join("")}</tbody></table></div><br><label>Observación Farmacia</label><textarea id="obs">${esc(o.pharmacy_observation||"")}</textarea><br><br><label>Nombre de quien recibe</label><input id="receiver" style="width:320px" value="${esc(o.receiver_name||"")}"><div class="footer">${o.status!=="Cerrado"?'<button id="closeBtn">Confirmar entrega y cerrar</button>':'<button class="secondary" id="guideBtn">Generar / ver guía de entrega</button>'}</div><div id="detailMsg"></div></div>`;
+  const o=activeOrder, closed=o.status==="Cerrado";
+  const deliveryHistory=deliveryEvents.filter(e=>e.order_id===o.id).sort((a,b)=>new Date(a.delivered_at)-new Date(b.delivered_at));
+  document.getElementById("detail").innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div><h2>Pedido — ${esc(o.services.name)}</h2><div class="small">${esc(o.periods.label)} · ${esc(o.status)}</div></div><button class="secondary" id="backDash">← Volver</button></div>
+  <div class="alert info"><b>Entregas parciales:</b> "Autorizado total" corresponde a lo que Farmacia compromete para este pedido. Registre en "Entregar ahora" solo lo que efectivamente se entrega en esta ocasión. El saldo queda disponible para una entrega posterior.</div>
+  <div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Stock actual</th><th>Solicitado</th><th>Autorizado total</th><th>Entregado acumulado</th><th>Saldo pendiente</th>${closed?'':'<th>Entregar ahora</th>'}</tr></thead><tbody>${o.order_lines.map(l=>{const del=deliveredForLine(l.id),auth=Number(l.authorized??l.requested??0),pend=Math.max(0,auth-del);return `<tr data-id="${l.id}" data-delivered="${del}" data-requested="${l.requested}"><td>${esc(l.items.name)}</td><td>${esc(l.items.unit)}</td><td>${l.current_stock}</td><td>${l.requested}</td><td>${closed?`<b>${auth}</b>`:`<input class="auth" type="number" min="0" value="${auth}">`}</td><td><b>${del}</b></td><td class="pendingCell">${pend?`<span class="tag warnTag">${pend}</span>`:'<span class="tag ok">0</span>'}</td>${closed?'':`<td><input class="deliverNow" type="number" min="0" value="0"></td>`}</tr>`}).join("")}</tbody></table></div>
+  <br><label>Observación Farmacia</label><textarea id="obs" ${closed?'disabled':''}>${esc(o.pharmacy_observation||"")}</textarea>
+  ${closed?'':`<br><br><label>Nombre de quien recibe esta entrega</label><input id="receiver" style="width:320px" value="">`}
+  <div class="footer">${closed?'<button class="secondary" id="guideBtn">Generar / ver guía de entrega</button>':'<button class="secondary" id="saveAuthBtn">Guardar autorización</button><button id="deliverBtn">Registrar entrega</button>'}</div><div id="detailMsg"></div></div>
+  <div class="card"><h3>Registro de entregas</h3><div class="table-wrap"><table><thead><tr><th>Fecha/hora</th><th>Recibido por</th><th>Detalle</th><th>Observación</th></tr></thead><tbody>${deliveryHistory.length?deliveryHistory.map(ev=>{const lines=deliveryLines.filter(dl=>dl.delivery_event_id===ev.id);const detail=lines.map(dl=>{const ol=o.order_lines.find(x=>Number(x.id)===Number(dl.order_line_id));return `${esc(ol?.items?.name||"Insumo")}: <b>${Number(dl.quantity)}</b>`}).join("<br>");return `<tr><td>${fmtDateTime(ev.delivered_at)}</td><td>${esc(ev.receiver_name)}</td><td>${detail||"—"}</td><td>${esc(ev.pharmacy_observation||"—")}</td></tr>`}).join(""):'<tr><td colspan="4" class="small">Todavía no se han registrado entregas.</td></tr>'}</tbody></table></div></div>`;
   document.getElementById("backDash").onclick=()=>{showSection("current");loadAll();};
-  if(o.status!=="Cerrado")document.getElementById("closeBtn").onclick=closeActive; else document.getElementById("guideBtn").onclick=showGuide;
+  if(closed)document.getElementById("guideBtn").onclick=showGuide;
+  else{
+    document.getElementById("saveAuthBtn").onclick=saveAuthorization;
+    document.getElementById("deliverBtn").onclick=registerDelivery;
+    document.querySelectorAll("#detail .auth").forEach(inp=>inp.oninput=refreshPendingPreview);
+    document.querySelectorAll("#detail .deliverNow").forEach(inp=>inp.oninput=refreshPendingPreview);
+  }
 }
-async function closeActive(){
-  const receiver=document.getElementById("receiver").value.trim(); if(!receiver){document.getElementById("detailMsg").innerHTML='<div class="alert danger">Ingrese el nombre de quien recibe.</div>';return;}
-  const rows=[...document.querySelectorAll("#detail tbody tr")];
-  for(const tr of rows){const val=Number(tr.querySelector(".auth").value||0);const {error}=await sb.from("order_lines").update({authorized:val}).eq("id",tr.dataset.id);if(error){alert(error.message);return;}}
-  const now=new Date().toISOString();
-  const {error}=await sb.from("orders").update({status:"Cerrado",closed_at:now,received_at:now,receiver_name:receiver,pharmacy_observation:document.getElementById("obs").value}).eq("id",activeOrder.id);
-  if(error){alert(error.message);return;}
-  await loadAll(); openOrder(activeOrder.id);
+function refreshPendingPreview(){
+  document.querySelectorAll("#detail tbody tr[data-id]").forEach(tr=>{const del=Number(tr.dataset.delivered||0),auth=Number(tr.querySelector(".auth")?.value||0),now=Number(tr.querySelector(".deliverNow")?.value||0),pend=Math.max(0,auth-del-now);const cell=tr.querySelector(".pendingCell");if(cell)cell.innerHTML=pend?`<span class="tag warnTag">${pend}</span>`:'<span class="tag ok">0</span>';});
+}
+async function persistAuthorization(){
+  const rows=[...document.querySelectorAll("#detail tbody tr[data-id]")];
+  for(const tr of rows){const delivered=Number(tr.dataset.delivered||0),val=Number(tr.querySelector(".auth").value||0);if(val<delivered)throw new Error(`La cantidad autorizada no puede ser menor que lo ya entregado (${delivered}).`);const {error}=await sb.from("order_lines").update({authorized:val}).eq("id",tr.dataset.id);if(error)throw error;}
+  const {error}=await sb.from("orders").update({pharmacy_observation:document.getElementById("obs").value}).eq("id",activeOrder.id);if(error)throw error;
+}
+async function saveAuthorization(){
+  try{await persistAuthorization();document.getElementById("detailMsg").innerHTML='<div class="status">Autorización guardada.</div>';await loadAll();openOrder(activeOrder.id);}catch(e){document.getElementById("detailMsg").innerHTML=`<div class="alert danger">${esc(e.message)}</div>`;}
+}
+async function registerDelivery(){
+  const receiver=document.getElementById("receiver").value.trim();if(!receiver){document.getElementById("detailMsg").innerHTML='<div class="alert danger">Ingrese el nombre de quien recibe esta entrega.</div>';return;}
+  const rows=[...document.querySelectorAll("#detail tbody tr[data-id]")];
+  const lines=[];
+  for(const tr of rows){const delivered=Number(tr.dataset.delivered||0),auth=Number(tr.querySelector(".auth").value||0),qty=Number(tr.querySelector(".deliverNow").value||0);if(auth<delivered){document.getElementById("detailMsg").innerHTML='<div class="alert danger">La cantidad autorizada no puede ser menor que lo ya entregado.</div>';return;}if(qty<0||qty>Math.max(0,auth-delivered)){document.getElementById("detailMsg").innerHTML='<div class="alert danger">La cantidad a entregar no puede superar el saldo pendiente autorizado.</div>';return;}if(qty>0)lines.push({order_line_id:Number(tr.dataset.id),quantity:qty});}
+  if(!lines.length){document.getElementById("detailMsg").innerHTML='<div class="alert danger">Ingrese al menos una cantidad en “Entregar ahora”.</div>';return;}
+  try{
+    await persistAuthorization();
+    const now=new Date().toISOString();
+    const {data:ev,error:evErr}=await sb.from("delivery_events").insert({order_id:activeOrder.id,receiver_name:receiver,pharmacy_observation:document.getElementById("obs").value||null,delivered_at:now}).select().single();if(evErr)throw evErr;
+    const {error:lnErr}=await sb.from("delivery_lines").insert(lines.map(x=>({...x,delivery_event_id:ev.id})));if(lnErr)throw lnErr;
+    // Recalcular saldo usando autorización mostrada y esta entrega.
+    let remaining=0;
+    for(const tr of rows){const delivered=Number(tr.dataset.delivered||0),auth=Number(tr.querySelector(".auth").value||0),qty=Number(tr.querySelector(".deliverNow").value||0);remaining+=Math.max(0,auth-delivered-qty);}
+    const status=remaining>0?"Entrega parcial":"Cerrado";
+    const update={status,receiver_name:receiver,received_at:now,pharmacy_observation:document.getElementById("obs").value||null,closed_at:status==="Cerrado"?now:null};
+    const {error:oErr}=await sb.from("orders").update(update).eq("id",activeOrder.id);if(oErr)throw oErr;
+    await loadAll();openOrder(activeOrder.id);
+  }catch(e){document.getElementById("detailMsg").innerHTML=`<div class="alert danger">${esc(e.message)}</div>`;}
 }
 function showGuide(){
-  const o=activeOrder;
-  document.getElementById("detail").innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between"><div><h2>Guía de entrega de insumos</h2></div><button class="secondary no-print" id="backOrder">← Volver</button></div><div class="grid4"><div class="box"><b>Servicio</b>${esc(o.services.name)}</div><div class="box"><b>Periodo</b>${esc(o.periods.label)}</div><div class="box"><b>Realizado por</b>${esc(o.requester_name)}</div><div class="box"><b>Recibido por</b>${esc(o.receiver_name)}</div><div class="box"><b>Fecha/hora</b>${fmtDateTime(o.received_at)}</div></div><div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Solicitado</th><th>Autorizado</th></tr></thead><tbody>${o.order_lines.map(l=>`<tr><td>${esc(l.items.name)}</td><td>${esc(l.items.unit)}</td><td>${l.requested}</td><td><b>${l.authorized??l.requested}</b></td></tr>`).join("")}</tbody></table></div><div class="footer no-print"><button onclick="window.print()">Imprimir guía</button></div></div>`;
+  const o=activeOrder,events=deliveryEvents.filter(e=>e.order_id===o.id).sort((a,b)=>new Date(a.delivered_at)-new Date(b.delivered_at));
+  document.getElementById("detail").innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between"><div><h2>Guía de entrega de insumos</h2></div><button class="secondary no-print" id="backOrder">← Volver</button></div><div class="grid4"><div class="box"><b>Servicio</b>${esc(o.services.name)}</div><div class="box"><b>Periodo</b>${esc(o.periods.label)}</div><div class="box"><b>Realizado por</b>${esc(o.requester_name)}</div><div class="box"><b>Estado</b>${esc(o.status)}</div><div class="box"><b>Última recepción</b>${esc(o.receiver_name||"—")} · ${fmtDateTime(o.received_at)}</div></div><div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Solicitado</th><th>Autorizado</th><th>Entregado acumulado</th><th>Saldo pendiente</th></tr></thead><tbody>${o.order_lines.map(l=>{const del=deliveredForLine(l.id),auth=Number(l.authorized??l.requested??0),pend=Math.max(0,auth-del);return `<tr><td>${esc(l.items.name)}</td><td>${esc(l.items.unit)}</td><td>${l.requested}</td><td>${auth}</td><td><b>${del}</b></td><td>${pend}</td></tr>`}).join("")}</tbody></table></div><h3>Detalle de entregas</h3><div class="table-wrap"><table><thead><tr><th>Fecha/hora</th><th>Recibido por</th><th>Detalle</th></tr></thead><tbody>${events.map(ev=>{const lines=deliveryLines.filter(dl=>dl.delivery_event_id===ev.id);return `<tr><td>${fmtDateTime(ev.delivered_at)}</td><td>${esc(ev.receiver_name)}</td><td>${lines.map(dl=>{const ol=o.order_lines.find(x=>Number(x.id)===Number(dl.order_line_id));return `${esc(ol?.items?.name||"Insumo")}: <b>${Number(dl.quantity)}</b>`}).join("<br>")}</td></tr>`}).join("")||'<tr><td colspan="3">Sin entregas registradas.</td></tr>'}</tbody></table></div><div class="footer no-print"><button onclick="window.print()">Imprimir guía</button></div></div>`;
   document.getElementById("backOrder").onclick=()=>openOrder(o.id);
 }
 function monthName(m){return ["","Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][Number(m)]||m;}
@@ -159,7 +232,9 @@ function renderReviewDetail(){
   document.getElementById("reviewDetailBody").innerHTML=rows.map(r=>`<tr><td>${esc(r.items?.name||"—")}</td><td>${esc(r.items?.unit||"—")}</td><td>${r.current_stock===null?'<span class="tag muted">Sin dato</span>':esc(r.current_stock)}</td><td>${r.requested===null?'<span class="tag muted">Sin dato</span>':esc(r.requested)}</td><td>${r.authorized===null?'<span class="tag muted">No informado</span>':esc(r.authorized)}</td><td><div>${esc(r.source_file||"—")}</div>${r.source_note?`<div class="small">${esc(r.source_note)}</div>`:""}</td></tr>`).join("");
 }
 function renderHistory(){
-  const rows=[];orders.filter(o=>o.status==="Cerrado").forEach(o=>o.order_lines.forEach(l=>rows.push(`<tr><td>${esc(o.periods.label)}</td><td>${esc(o.services.name)}</td><td>${esc(l.items.name)}</td><td>${esc(l.items.unit)}</td><td>${l.current_stock}</td><td>${l.requested}</td><td>${l.authorized??l.requested}</td><td>${esc(o.receiver_name)} · ${fmtDateTime(o.received_at)}</td></tr>`)));document.getElementById("historyBody").innerHTML=rows.join("");
+  const rows=[];
+  orders.filter(o=>o.status==="Cerrado"||o.status==="Entrega parcial").forEach(o=>(o.order_lines||[]).forEach(l=>{const delivered=deliveredForLine(l.id),auth=Number(l.authorized??l.requested??0),pending=Math.max(0,auth-delivered);const evs=deliveryEvents.filter(e=>e.order_id===o.id).sort((a,b)=>new Date(b.delivered_at)-new Date(a.delivered_at));const last=evs[0];rows.push(`<tr><td>${esc(o.periods.label)}</td><td>${esc(o.services.name)}</td><td>${esc(l.items.name)}</td><td>${esc(l.items.unit)}</td><td>${l.current_stock}</td><td>${l.requested}</td><td>${auth}</td><td><b>${delivered}</b></td><td>${pending?`<span class="tag warnTag">${pending}</span>`:'0'}</td><td>${last?`${esc(last.receiver_name)} · ${fmtDateTime(last.delivered_at)}`:'—'}</td></tr>`)}));
+  document.getElementById("historyBody").innerHTML=rows.join("")||'<tr><td colspan="10" class="small">Sin entregas registradas.</td></tr>';
 }
 function periodIndex(year,month){return Number(year)*12+(Number(month)-1);}
 function periodLabelShort(year,month){return `${monthName(month)} ${year}`;}
@@ -179,13 +254,14 @@ function buildConsumptionRows(){
     else g.unknownHistorical.push({idx,requested:r.requested===null?null:Number(r.requested)});
   });
 
-  orders.filter(o=>o.status==="Cerrado").forEach(o=>{
+  // Todo pedido enviado aporta una observación de stock del mes en que fue solicitado.
+  orders.forEach(o=>{
     const y=Number(o.periods?.year),m=Number(o.periods?.month),idx=periodIndex(y,m);
-    (o.order_lines||[]).forEach(l=>{
-      const g=ensure(o.service_id,l.item_id,l.items?.name,l.items?.unit);
-      if(l.current_stock!==null)g.observations.push({idx,year:y,month:m,stock:Number(l.current_stock),source:"Pedido"});
-      if(l.authorized!==null)g.deliveries.push({idx,qty:Number(l.authorized),source:"Pedido"});
-    });
+    (o.order_lines||[]).forEach(l=>{const g=ensure(o.service_id,l.item_id,l.items?.name,l.items?.unit);if(l.current_stock!==null)g.observations.push({idx,year:y,month:m,stock:Number(l.current_stock),source:"Pedido"});});
+  });
+  // Las entregas nuevas se contabilizan por la fecha real en que fueron registradas.
+  deliveryLines.forEach(dl=>{
+    const ev=eventById(dl.delivery_event_id);if(!ev)return;const o=orders.find(x=>x.id===ev.order_id);if(!o)return;const ol=(o.order_lines||[]).find(x=>Number(x.id)===Number(dl.order_line_id));if(!ol)return;const d=new Date(ev.delivered_at),y=d.getFullYear(),m=d.getMonth()+1,idx=periodIndex(y,m);const g=ensure(o.service_id,ol.item_id,ol.items?.name,ol.items?.unit);g.deliveries.push({idx,qty:Number(dl.quantity),source:"Entrega registrada"});
   });
 
   const results=[];
