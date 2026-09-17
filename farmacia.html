@@ -34,7 +34,19 @@ table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}th{pos
   <div class="table-wrap" style="margin-top:14px;max-height:620px"><table><thead><tr><th>Servicio</th><th>Insumo</th><th>Último stock</th><th>Última entrega autorizada</th><th>Consumo último periodo</th><th>Promedio 3M</th><th>Cobertura</th><th>Motivo / estado</th></tr></thead><tbody id="consBody"></tbody></table></div>
 </div>
 </section>
-<section id="config" class="hidden"><div class="card"><h2>Configuración</h2><h3>Calendario</h3><div id="periods"></div><h3>Correos automáticos</h3><div class="grid4"><div class="box"><b>Aviso apertura</b><label><input id="openActive" type="checkbox"> Activo</label><br><input id="openDays" type="number" min="0" style="width:80px"> día(s) antes</div><div class="box"><b>Tipo de días</b><select id="openType"><option value="business">Hábiles</option><option value="calendar">Corridos</option></select></div><div class="box"><b>Recordatorio cierre</b><label><input id="closeActive" type="checkbox"> Activo</label><br><input id="closeDays" type="number" min="0" style="width:80px"> día(s) antes</div><div class="box"><b>Tipo de días</b><select id="closeType"><option value="business">Hábiles</option><option value="calendar">Corridos</option></select></div></div><div class="footer"><button id="saveConfig">Guardar configuración</button></div><div id="cfgmsg"></div></div></section>
+<section id="config" class="hidden">
+<div class="card"><h2>Configuración</h2><h3>Calendario</h3><div id="periods"></div></div>
+<div class="card"><h3>Correos automáticos</h3><div class="alert info">Los correos se preparan según el calendario. El recordatorio de cierre se enviará solo a servicios que aún no hayan enviado su pedido.</div>
+<div class="grid4">
+<div class="box"><b>Aviso apertura</b><label><input id="openActive" type="checkbox"> Activo</label><br><input id="openDays" type="number" min="0" style="width:80px"> día(s) antes<br><select id="openType" style="margin-top:8px"><option value="business">Hábiles</option><option value="calendar">Corridos</option></select></div>
+<div class="box" style="grid-column:span 3"><b>Asunto apertura</b><input id="openSubject" style="width:100%"><b style="margin-top:8px">Mensaje</b><textarea id="openBody"></textarea></div>
+<div class="box"><b>Recordatorio cierre</b><label><input id="closeActive" type="checkbox"> Activo</label><br><input id="closeDays" type="number" min="0" style="width:80px"> día(s) antes<br><select id="closeType" style="margin-top:8px"><option value="business">Hábiles</option><option value="calendar">Corridos</option></select></div>
+<div class="box" style="grid-column:span 3"><b>Asunto cierre</b><input id="closeSubject" style="width:100%"><b style="margin-top:8px">Mensaje</b><textarea id="closeBody"></textarea></div>
+</div><div class="small" style="margin-top:8px">Variables disponibles: {servicio}, {mes}, {fecha_apertura}, {fecha_cierre}</div>
+<div class="footer"><button id="saveConfig">Guardar configuración</button></div><div id="cfgmsg"></div></div>
+<div class="card"><h3>Destinatarios por servicio</h3><div class="small">Puede registrar un responsable principal y un reemplazo. Si ambos correos son iguales, se enviará solo una vez.</div><div class="table-wrap" style="margin-top:12px;max-height:none"><table><thead><tr><th>Servicio</th><th>Principal</th><th>Correo principal</th><th>Reemplazo</th><th>Correo reemplazo</th><th>Activo</th></tr></thead><tbody id="respBody"></tbody></table></div><div class="footer"><button id="saveRecipients">Guardar destinatarios</button></div><div id="respMsg"></div></div>
+<div class="card"><h3>Estado de automatización</h3><div id="emailAutoStatus" class="alert warn">Motor de envío pendiente de conexión con proveedor de correo.</div><div class="footer"><button class="secondary" id="previewDueEmails">Ver correos que corresponderían hoy</button></div><div id="duePreview" style="margin-top:12px"></div></div>
+</section>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -57,7 +69,7 @@ function todayISO(){
 </script>
 
 <script>
-let orders=[], periods=[], emailConfig={}, historical=[], services=[], deliveryEvents=[], deliveryLines=[], activeOrder=null, reviewSelection=null;
+let orders=[], periods=[], emailConfig={}, historical=[], services=[], serviceResponsibles=[], deliveryEvents=[], deliveryLines=[], activeOrder=null, reviewSelection=null;
 
 async function ensureAuth(){
   const {data:{session}}=await sb.auth.getSession();
@@ -65,7 +77,7 @@ async function ensureAuth(){
   return true;
 }
 async function loadAll(){
-  const [o,p,e,h,srv,it,de,dl] = await Promise.all([
+  const [o,p,e,h,srv,it,de,dl,resp] = await Promise.all([
     sb.from("orders").select("*,services(name),periods(label,year,month),order_lines(*,items(name,unit))").order("submitted_at",{ascending:false}),
     sb.from("periods").select("*").order("year").order("month"),
     sb.from("email_config").select("*"),
@@ -73,11 +85,12 @@ async function loadAll(){
     sb.from("services").select("id,name,active").eq("active",true).order("id"),
     sb.from("items").select("id,name,unit"),
     sb.from("delivery_events").select("*").order("delivered_at",{ascending:true}),
-    sb.from("delivery_lines").select("*").order("id",{ascending:true})
+    sb.from("delivery_lines").select("*").order("id",{ascending:true}),
+    sb.from("service_responsibles").select("*").order("service_id")
   ]);
-  for(const r of [o,p,e,h,srv,it,de,dl]) if(r.error) throw r.error;
+  for(const r of [o,p,e,h,srv,it,de,dl,resp]) if(r.error) throw r.error;
   orders=o.data||[]; periods=p.data||[]; emailConfig=Object.fromEntries((e.data||[]).map(x=>[x.key,x])); services=srv.data||[];
-  deliveryEvents=de.data||[]; deliveryLines=dl.data||[];
+  deliveryEvents=de.data||[]; deliveryLines=dl.data||[]; serviceResponsibles=resp.data||[];
   const itemsById=Object.fromEntries((it.data||[]).map(x=>[String(x.id),x]));
   const servicesById=Object.fromEntries(services.map(x=>[String(x.id),x]));
   historical=(h.data||[]).map(r=>({...r,items:itemsById[String(r.item_id)]||null,services:servicesById[String(r.service_id)]||null}));
@@ -378,12 +391,35 @@ function renderConsumption(){
 }
 function renderConfig(){
   document.getElementById("periods").innerHTML=periods.map(p=>`<div class="box" style="margin-bottom:8px"><b>${esc(p.label)}</b> Apertura: ${p.open_date} · Cierre: ${p.close_date}</div>`).join("");
-  const op=emailConfig.opening,cl=emailConfig.closing;if(op){openActive.checked=op.active;openDays.value=op.days_before;openType.value=op.day_type}if(cl){closeActive.checked=cl.active;closeDays.value=cl.days_before;closeType.value=cl.day_type}
+  const op=emailConfig.opening,cl=emailConfig.closing;
+  if(op){openActive.checked=op.active;openDays.value=op.days_before;openType.value=op.day_type;openSubject.value=op.subject||"";openBody.value=op.body||""}
+  if(cl){closeActive.checked=cl.active;closeDays.value=cl.days_before;closeType.value=cl.day_type;closeSubject.value=cl.subject||"";closeBody.value=cl.body||""}
+  const byService=Object.fromEntries(serviceResponsibles.map(r=>[String(r.service_id),r]));
+  document.getElementById("respBody").innerHTML=services.map(s=>{const r=byService[String(s.id)]||{};return `<tr data-service="${s.id}"><td><b>${esc(s.name)}</b></td><td><input class="pname" value="${esc(r.principal_name||"")}" style="width:180px"></td><td><input class="pemail" type="email" value="${esc(r.principal_email||"")}" style="width:240px"></td><td><input class="sname" value="${esc(r.substitute_name||"")}" style="width:180px"></td><td><input class="semail" type="email" value="${esc(r.substitute_email||"")}" style="width:240px"></td><td><input class="ractive" type="checkbox" ${r.active!==false?"checked":""}></td></tr>`}).join("");
+  document.getElementById("emailAutoStatus").innerHTML='<b>Configuración interna lista.</b> Falta conectar el proveedor que enviará físicamente los correos y activar la ejecución diaria.';
 }
 document.getElementById("saveConfig").onclick=async()=>{
- const updates=[{key:"opening",active:openActive.checked,days_before:Number(openDays.value||0),day_type:openType.value},{key:"closing",active:closeActive.checked,days_before:Number(closeDays.value||0),day_type:closeType.value}];
+ const updates=[
+  {key:"opening",active:openActive.checked,days_before:Number(openDays.value||0),day_type:openType.value,subject:openSubject.value.trim(),body:openBody.value.trim(),updated_at:new Date().toISOString()},
+  {key:"closing",active:closeActive.checked,days_before:Number(closeDays.value||0),day_type:closeType.value,subject:closeSubject.value.trim(),body:closeBody.value.trim(),updated_at:new Date().toISOString()}
+ ];
  for(const u of updates){const {error}=await sb.from("email_config").update(u).eq("key",u.key);if(error){alert(error.message);return;}}
- document.getElementById("cfgmsg").innerHTML='<div class="status">Configuración guardada.</div>';await loadAll();
+ document.getElementById("cfgmsg").innerHTML='<div class="status">Configuración de correos guardada.</div>';await loadAll();
+};
+document.getElementById("saveRecipients").onclick=async()=>{
+ const rows=[...document.querySelectorAll("#respBody tr")];
+ for(const tr of rows){
+  const payload={service_id:Number(tr.dataset.service),principal_name:tr.querySelector(".pname").value.trim()||null,principal_email:tr.querySelector(".pemail").value.trim()||null,substitute_name:tr.querySelector(".sname").value.trim()||null,substitute_email:tr.querySelector(".semail").value.trim()||null,active:tr.querySelector(".ractive").checked,updated_at:new Date().toISOString()};
+  const {error}=await sb.from("service_responsibles").upsert(payload,{onConflict:"service_id"});if(error){alert(error.message);return;}
+ }
+ document.getElementById("respMsg").innerHTML='<div class="status">Destinatarios guardados.</div>';await loadAll();
+};
+document.getElementById("previewDueEmails").onclick=async()=>{
+ const box=document.getElementById("duePreview");box.innerHTML='<div class="small">Consultando…</div>';
+ const {data,error}=await sb.rpc("get_due_email_notifications",{p_run_date:todayISO()});
+ if(error){box.innerHTML=`<div class="alert danger">${esc(error.message)}</div>`;return;}
+ if(!data?.length){box.innerHTML='<div class="alert info">Hoy no corresponde enviar ningún correo según el calendario y la configuración actual.</div>';return;}
+ box.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Tipo</th><th>Servicio</th><th>Periodo</th><th>Destinatario</th><th>Asunto</th></tr></thead><tbody>${data.map(x=>`<tr><td>${x.email_type==="opening"?"Apertura":"Cierre"}</td><td>${esc(x.service_name)}</td><td>${esc(x.period_label)}</td><td>${esc(x.recipient_name||"")}<div class="small">${esc(x.recipient)}</div></td><td>${esc(x.subject)}</td></tr>`).join("")}</tbody></table></div>`;
 };
 function showSection(v){["current","detail","review","history","consumption","config"].forEach(id=>document.getElementById(id).classList.toggle("hidden",id!==v));document.querySelectorAll(".pill").forEach(p=>p.classList.toggle("active",p.dataset.view===v));}
 document.querySelectorAll(".pill").forEach(p=>p.onclick=()=>showSection(p.dataset.view));
