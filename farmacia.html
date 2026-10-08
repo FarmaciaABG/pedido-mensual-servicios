@@ -15,8 +15,25 @@ table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}th{pos
 @media print{header,.no-print{display:none!important}.shell{padding:0}.card{box-shadow:none;border:0}}</style></head>
 <body><header><div style="display:flex;justify-content:space-between;align-items:center"><div><h1>Control Farmacia</h1><p>Pedido mensual de servicios</p></div><button class="secondary" id="logoutBtn">Salir</button></div></header>
 <div class="shell">
-<div class="filters no-print" style="margin-bottom:18px"><span class="pill active" data-view="current">Pedidos</span><span class="pill" data-view="review">Revisión historial</span><span class="pill" data-view="history">Historial</span><span class="pill" data-view="consumption">Control de consumo</span><span class="pill" data-view="config">Configuración</span></div>
+<div class="filters no-print" style="margin-bottom:18px"><span class="pill active" data-view="current">Pedidos</span><span class="pill" data-view="consolidated">Pedido consolidado</span><span class="pill" data-view="review">Revisión historial</span><span class="pill" data-view="history">Historial</span><span class="pill" data-view="consumption">Control de consumo</span><span class="pill" data-view="config">Configuración</span></div>
 <section id="current"><div class="grid4" id="metrics"></div><div class="card"><h2>Pedidos</h2><div class="table-wrap"><table><thead><tr><th>Servicio</th><th>Periodo</th><th>Realizado por</th><th>Fecha</th><th>Estado</th><th>Plazo</th><th>Acción</th></tr></thead><tbody id="ordersBody"></tbody></table></div></div><div class="card"><div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap"><div><h2 style="margin-bottom:4px">Pendientes de entrega</h2><div class="small">Saldos de pedidos con entregas parciales. Desde aquí puede volver al mismo pedido y registrar una entrega adicional.</div></div><span id="pendingDeliveryCount" class="tag warnTag">0 pendientes</span></div><div class="table-wrap" style="margin-top:12px"><table><thead><tr><th>Servicio</th><th>Periodo</th><th>Insumo</th><th>Solicitado</th><th>Autorizado</th><th>Entregado</th><th>Saldo pendiente</th><th>Acción</th></tr></thead><tbody id="pendingDeliveryBody"></tbody></table></div></div></section>
+<section id="consolidated" class="hidden">
+<div class="card">
+  <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-end;flex-wrap:wrap">
+    <div><h2 style="margin-bottom:4px">Pedido consolidado</h2><div class="small">Suma automática de todo lo solicitado por los servicios para el periodo seleccionado. El detalle original de cada servicio se conserva.</div></div>
+    <div class="filters no-print">
+      <select id="conPeriod" style="min-width:200px"></select>
+      <input id="conSearch" placeholder="Buscar insumo" style="min-width:240px">
+      <button class="secondary" id="conPrint">Imprimir consolidado</button>
+      <button class="secondary" id="conExport">Exportar Excel/CSV</button>
+    </div>
+  </div>
+  <div class="grid4" id="conMetrics" style="margin-top:14px"></div>
+  <div id="conStatus"></div>
+  <div class="table-wrap" style="margin-top:14px;max-height:620px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Total solicitado</th><th>Servicios que solicitan</th><th class="no-print">Detalle</th></tr></thead><tbody id="conBody"></tbody></table></div>
+</div>
+<div class="card" id="conDetailCard"><h3 id="conDetailTitle">Detalle por servicio</h3><div class="small" id="conDetailSub">Seleccione “Ver detalle” en un insumo para revisar qué cantidad pidió cada servicio.</div><div class="table-wrap" style="margin-top:12px;max-height:430px"><table><thead><tr><th>Servicio</th><th>Realizado por</th><th>Estado</th><th>Stock informado</th><th>Solicitado</th></tr></thead><tbody id="conDetailBody"><tr><td colspan="5" class="small">Sin selección.</td></tr></tbody></table></div></div>
+</section>
 <section id="detail" class="hidden"></section>
 <section id="review" class="hidden"><div class="card"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-end;flex-wrap:wrap"><div><h2 style="margin-bottom:4px">Revisión de historial</h2><div class="small">Cobertura histórica por servicio y mes. Esta vista es de revisión; no modifica datos.</div></div><div><label class="small" for="reviewYear">Año</label><br><select id="reviewYear"></select></div></div><div class="grid4" id="reviewMetrics" style="margin-top:14px"></div><div class="legend"><span><i class="dot green"></i>Con stock informado</span><span><i class="dot yellow"></i>Solo solicitud / stock parcial</span><span><i class="dot gray"></i>Sin registros históricos</span></div><div class="table-wrap" style="max-height:none"><table id="coverageTable"><thead id="coverageHead"></thead><tbody id="coverageBody"></tbody></table></div></div><div class="card" id="reviewDetailCard"><h3 id="reviewDetailTitle">Detalle del periodo</h3><div class="small" id="reviewDetailSub">Seleccione una celda con registros para revisar los insumos cargados.</div><div class="table-wrap" style="margin-top:12px;max-height:430px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Stock informado</th><th>Solicitud</th><th>Autorizado</th><th>Fuente</th></tr></thead><tbody id="reviewDetailBody"><tr><td colspan="6" class="small">Sin selección.</td></tr></tbody></table></div></div></section>
 <section id="history" class="hidden"><div class="card"><h2>Historial de pedidos cerrados</h2><div class="table-wrap"><table><thead><tr><th>Periodo</th><th>Servicio</th><th>Insumo</th><th>Unidad</th><th>Stock</th><th>Solicitado</th><th>Autorizado</th><th>Entregado</th><th>Saldo</th><th>Última entrega</th></tr></thead><tbody id="historyBody"></tbody></table></div></div></section>
@@ -96,7 +113,7 @@ async function loadAll(){
   historical=(h.data||[]).map(r=>({...r,items:itemsById[String(r.item_id)]||null,services:servicesById[String(r.service_id)]||null}));
   renderAll();
 }
-function renderAll(){renderMetrics();renderOrders();renderPendingDeliveries();renderReview();renderHistory();renderConsumption();renderConfig();}
+function renderAll(){renderMetrics();renderOrders();renderPendingDeliveries();renderConsolidated();renderReview();renderHistory();renderConsumption();renderConfig();}
 function getDashboardPeriod(){
   const activePeriods=periods.filter(p=>p.active!==false);
   if(!activePeriods.length)return null;
@@ -124,6 +141,72 @@ function renderMetrics(){
     ["Fuera de plazo",late],
     ["Cerrados",closed]
   ].map(v=>`<div class="metric"><b>${v[0]}</b><strong>${v[1]}</strong></div>`).join("");
+}
+function getConsolidatedPeriodId(){
+  const sel=document.getElementById("conPeriod");
+  if(sel && sel.value)return Number(sel.value);
+  return Number(getDashboardPeriod()?.id||0);
+}
+function getConsolidatedRows(periodId){
+  const map=new Map();
+  orders.filter(o=>Number(o.period_id)===Number(periodId)).forEach(o=>{
+    (o.order_lines||[]).forEach(l=>{
+      const itemId=Number(l.item_id), requested=Number(l.requested||0);
+      if(requested<=0)return;
+      const key=String(itemId);
+      if(!map.has(key))map.set(key,{item_id:itemId,name:l.items?.name||"Insumo",unit:l.items?.unit||"—",total:0,services:[]});
+      const row=map.get(key);
+      row.total+=requested;
+      row.services.push({order_id:o.id,service:o.services?.name||"—",requester:o.requester_name||"—",status:o.status||"—",stock:l.current_stock,requested});
+    });
+  });
+  return [...map.values()].sort((a,b)=>a.name.localeCompare(b.name,"es"));
+}
+function renderConsolidated(){
+  const sel=document.getElementById("conPeriod"); if(!sel)return;
+  const currentId=String(getDashboardPeriod()?.id||"");
+  const prior=sel.value;
+  sel.innerHTML=periods.filter(p=>p.active!==false).map(p=>`<option value="${p.id}">${esc(p.label)}</option>`).join("");
+  sel.value=prior && [...sel.options].some(o=>o.value===prior)?prior:currentId;
+  if(!sel.value && sel.options.length)sel.selectedIndex=0;
+  renderConsolidatedTable();
+  sel.onchange=()=>renderConsolidatedTable();
+  const search=document.getElementById("conSearch"); if(search)search.oninput=()=>renderConsolidatedTable();
+  const print=document.getElementById("conPrint"); if(print)print.onclick=()=>window.print();
+  const exp=document.getElementById("conExport"); if(exp)exp.onclick=exportConsolidatedCsv;
+}
+function renderConsolidatedTable(){
+  const periodId=getConsolidatedPeriodId();
+  const period=periods.find(p=>Number(p.id)===periodId);
+  const periodOrders=orders.filter(o=>Number(o.period_id)===periodId);
+  const rows=getConsolidatedRows(periodId);
+  const q=(document.getElementById("conSearch")?.value||"").trim().toLowerCase();
+  const visible=q?rows.filter(r=>r.name.toLowerCase().includes(q)):rows;
+  const received=new Set(periodOrders.map(o=>Number(o.service_id))).size;
+  const expected=services.length||13;
+  const complete=received>=expected;
+  document.getElementById("conMetrics").innerHTML=[
+    ["Periodo",period?.label||"—"],["Servicios recibidos",`${received} / ${expected}`],["Insumos consolidados",rows.length],["Estado",complete?"Completo":"En curso"]
+  ].map(v=>`<div class="metric"><b>${v[0]}</b><strong>${esc(v[1])}</strong></div>`).join("");
+  document.getElementById("conStatus").innerHTML=complete?'<div class="status">Todos los servicios han enviado su pedido para este periodo.</div>':`<div class="alert warn"><b>Consolidado aún incompleto:</b> han enviado ${received} de ${expected} servicios. La tabla se actualizará automáticamente cuando ingresen nuevos pedidos.</div>`;
+  const body=document.getElementById("conBody");
+  if(!visible.length){body.innerHTML='<tr><td colspan="5" class="small">No hay insumos solicitados para este periodo.</td></tr>';return;}
+  body.innerHTML=visible.map(r=>`<tr><td><b>${esc(r.name)}</b></td><td>${esc(r.unit)}</td><td><b>${r.total}</b></td><td>${r.services.length}</td><td class="no-print"><button class="secondary conDetailBtn" data-item="${r.item_id}">Ver detalle</button></td></tr>`).join("");
+  document.querySelectorAll(".conDetailBtn").forEach(b=>b.onclick=()=>showConsolidatedDetail(Number(b.dataset.item)));
+}
+function showConsolidatedDetail(itemId){
+  const row=getConsolidatedRows(getConsolidatedPeriodId()).find(r=>Number(r.item_id)===Number(itemId)); if(!row)return;
+  document.getElementById("conDetailTitle").textContent=`Detalle — ${row.name}`;
+  document.getElementById("conDetailSub").textContent=`Total consolidado: ${row.total} ${row.unit}.`;
+  document.getElementById("conDetailBody").innerHTML=row.services.sort((a,b)=>a.service.localeCompare(b.service,"es")).map(x=>`<tr><td><b>${esc(x.service)}</b></td><td>${esc(x.requester)}</td><td>${esc(x.status)}</td><td>${x.stock??"—"}</td><td><b>${x.requested}</b></td></tr>`).join("");
+  document.getElementById("conDetailCard").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function exportConsolidatedCsv(){
+  const periodId=getConsolidatedPeriodId(), period=periods.find(p=>Number(p.id)===periodId), rows=getConsolidatedRows(periodId);
+  const lines=[["Periodo","Insumo","Unidad","Total solicitado","Servicios que solicitan","Detalle por servicio"]];
+  rows.forEach(r=>lines.push([period?.label||"",r.name,r.unit,r.total,r.services.length,r.services.map(x=>`${x.service}: ${x.requested}`).join(" | ")]));
+  const csv="\ufeff"+lines.map(cols=>cols.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(";")).join("\r\n");
+  const blob=new Blob([csv],{type:"text/csv;charset=utf-8;"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=`pedido_consolidado_${(period?.label||"periodo").replace(/\s+/g,"_")}.csv`; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
 }
 function eventById(id){return deliveryEvents.find(e=>e.id===id)||null;}
 function deliveredForLine(lineId){return deliveryLines.filter(x=>Number(x.order_line_id)===Number(lineId)).reduce((a,x)=>a+Number(x.quantity||0),0);}
@@ -156,11 +239,11 @@ async function openOrder(id){
   <div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Stock actual</th><th>Solicitado</th><th>Autorizado total</th><th>Entregado acumulado</th><th>Saldo pendiente</th>${closed?'':'<th>Entregar ahora</th>'}</tr></thead><tbody>${o.order_lines.map(l=>{const del=deliveredForLine(l.id),auth=Number(l.authorized??l.requested??0),pend=Math.max(0,auth-del);return `<tr data-id="${l.id}" data-delivered="${del}" data-requested="${l.requested}"><td>${esc(l.items.name)}</td><td>${esc(l.items.unit)}</td><td>${l.current_stock}</td><td>${l.requested}</td><td>${closed?`<b>${auth}</b>`:`<input class="auth" type="number" min="0" value="${auth}">`}</td><td><b>${del}</b></td><td class="pendingCell">${pend?`<span class="tag warnTag">${pend}</span>`:'<span class="tag ok">0</span>'}</td>${closed?'':`<td><input class="deliverNow" type="number" min="0" value="0"></td>`}</tr>`}).join("")}</tbody></table></div>
   <br><label>Observación Farmacia</label><textarea id="obs" ${closed?'disabled':''}>${esc(o.pharmacy_observation||"")}</textarea>
   ${closed?'':`<br><br><label>Nombre de quien recibe esta entrega</label><input id="receiver" style="width:320px" value="">`}
-  <div class="footer">${closed?'<button class="secondary" id="guideBtn">Generar / ver guía de entrega</button>':'<button class="secondary" id="saveAuthBtn">Guardar autorización</button><button id="deliverBtn">Registrar entrega</button>'}<button class="dangerBtn" id="deleteOrderBtn">Eliminar pedido</button></div><div class="small" style="margin-top:8px">Eliminar está disponible solo en Control Farmacia. Al confirmar se borran también las líneas y entregas asociadas, y el servicio queda habilitado para enviar un nuevo pedido del mismo periodo.</div><div id="detailMsg"></div></div>
+  <div class="footer">${closed?'<button class="secondary" id="guideBtn">Generar / ver guía de entrega</button>':'<button class="secondary" id="saveAuthBtn">Guardar autorización</button><button id="deliverBtn">Registrar entrega</button><button class="secondary" id="guideBtn">Generar / ver guía de entrega</button>'}<button class="dangerBtn" id="deleteOrderBtn">Eliminar pedido</button></div><div class="small" style="margin-top:8px">La guía puede visualizarse e imprimirse aun cuando el pedido tenga entregas parciales. Eliminar está disponible solo en Control Farmacia. Al confirmar se borran también las líneas y entregas asociadas, y el servicio queda habilitado para enviar un nuevo pedido del mismo periodo.</div><div id="detailMsg"></div></div>
   <div class="card"><h3>Registro de entregas</h3><div class="table-wrap"><table><thead><tr><th>Fecha/hora</th><th>Recibido por</th><th>Detalle</th><th>Observación</th></tr></thead><tbody>${deliveryHistory.length?deliveryHistory.map(ev=>{const lines=deliveryLines.filter(dl=>dl.delivery_event_id===ev.id);const detail=lines.map(dl=>{const ol=o.order_lines.find(x=>Number(x.id)===Number(dl.order_line_id));return `${esc(ol?.items?.name||"Insumo")}: <b>${Number(dl.quantity)}</b>`}).join("<br>");return `<tr><td>${fmtDateTime(ev.delivered_at)}</td><td>${esc(ev.receiver_name)}</td><td>${detail||"—"}</td><td>${esc(ev.pharmacy_observation||"—")}</td></tr>`}).join(""):'<tr><td colspan="4" class="small">Todavía no se han registrado entregas.</td></tr>'}</tbody></table></div></div>`;
   document.getElementById("backDash").onclick=()=>{showSection("current");loadAll();};
   document.getElementById("deleteOrderBtn").onclick=deleteActiveOrder;
-  if(closed)document.getElementById("guideBtn").onclick=showGuide;
+  const guideBtn=document.getElementById("guideBtn"); if(guideBtn) guideBtn.onclick=showGuide;
   else{
     document.getElementById("saveAuthBtn").onclick=saveAuthorization;
     document.getElementById("deliverBtn").onclick=registerDelivery;
@@ -421,7 +504,7 @@ document.getElementById("previewDueEmails").onclick=async()=>{
  if(!data?.length){box.innerHTML='<div class="alert info">Hoy no corresponde enviar ningún correo según el calendario y la configuración actual.</div>';return;}
  box.innerHTML=`<div class="table-wrap"><table><thead><tr><th>Tipo</th><th>Servicio</th><th>Periodo</th><th>Destinatario</th><th>Asunto</th></tr></thead><tbody>${data.map(x=>`<tr><td>${x.email_type==="opening"?"Apertura":"Cierre"}</td><td>${esc(x.service_name)}</td><td>${esc(x.period_label)}</td><td>${esc(x.recipient_name||"")}<div class="small">${esc(x.recipient)}</div></td><td>${esc(x.subject)}</td></tr>`).join("")}</tbody></table></div>`;
 };
-function showSection(v){["current","detail","review","history","consumption","config"].forEach(id=>document.getElementById(id).classList.toggle("hidden",id!==v));document.querySelectorAll(".pill").forEach(p=>p.classList.toggle("active",p.dataset.view===v));}
+function showSection(v){["current","detail","consolidated","review","history","consumption","config"].forEach(id=>document.getElementById(id).classList.toggle("hidden",id!==v));document.querySelectorAll(".pill").forEach(p=>p.classList.toggle("active",p.dataset.view===v));}
 document.querySelectorAll(".pill").forEach(p=>p.onclick=()=>showSection(p.dataset.view));
 document.getElementById("logoutBtn").onclick=async()=>{await sb.auth.signOut();location.href="index.html";};
 (async()=>{if(await ensureAuth()){try{await loadAll()}catch(e){console.error(e);alert("Error al cargar Control Farmacia: "+e.message);const m=document.getElementById("reviewMetrics");if(m)m.innerHTML=`<div class="alert danger" style="grid-column:1/-1">No fue posible cargar el historial: ${esc(e.message)}</div>`;}}})();
