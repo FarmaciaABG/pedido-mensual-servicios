@@ -35,7 +35,7 @@ table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}th{pos
 <div class="card" id="conDetailCard"><h3 id="conDetailTitle">Detalle por servicio</h3><div class="small" id="conDetailSub">Seleccione “Ver detalle” en un insumo para revisar qué cantidad pidió cada servicio.</div><div class="table-wrap" style="margin-top:12px;max-height:430px"><table><thead><tr><th>Servicio</th><th>Realizado por</th><th>Estado</th><th>Stock informado</th><th>Solicitado</th></tr></thead><tbody id="conDetailBody"><tr><td colspan="5" class="small">Sin selección.</td></tr></tbody></table></div></div>
 </section>
 <section id="detail" class="hidden"></section>
-<section id="review" class="hidden"><div class="card"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-end;flex-wrap:wrap"><div><h2 style="margin-bottom:4px">Revisión de historial</h2><div class="small">Cobertura histórica por servicio y mes. Esta vista es de revisión; no modifica datos.</div></div><div><label class="small" for="reviewYear">Año</label><br><select id="reviewYear"></select></div></div><div class="grid4" id="reviewMetrics" style="margin-top:14px"></div><div class="legend"><span><i class="dot green"></i>Con stock informado</span><span><i class="dot yellow"></i>Solo solicitud / stock parcial</span><span><i class="dot gray"></i>Sin registros históricos</span></div><div class="table-wrap" style="max-height:none"><table id="coverageTable"><thead id="coverageHead"></thead><tbody id="coverageBody"></tbody></table></div></div><div class="card" id="reviewDetailCard"><h3 id="reviewDetailTitle">Detalle del periodo</h3><div class="small" id="reviewDetailSub">Seleccione una celda con registros para revisar los insumos cargados.</div><div class="table-wrap" style="margin-top:12px;max-height:430px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Stock informado</th><th>Solicitud</th><th>Autorizado</th><th>Fuente</th></tr></thead><tbody id="reviewDetailBody"><tr><td colspan="6" class="small">Sin selección.</td></tr></tbody></table></div></div></section>
+<section id="review" class="hidden"><div class="card"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-end;flex-wrap:wrap"><div><h2 style="margin-bottom:4px">Revisión de historial</h2><div class="small">Cobertura por servicio y mes, integrando histórico importado y pedidos realizados en el sistema. Esta vista es de revisión; no modifica datos.</div></div><div><label class="small" for="reviewYear">Año</label><br><select id="reviewYear"></select></div></div><div class="grid4" id="reviewMetrics" style="margin-top:14px"></div><div class="legend"><span><i class="dot green"></i>Con stock informado</span><span><i class="dot yellow"></i>Solo solicitud / stock parcial</span><span><i class="dot gray"></i>Sin registros históricos</span></div><div class="table-wrap" style="max-height:none"><table id="coverageTable"><thead id="coverageHead"></thead><tbody id="coverageBody"></tbody></table></div></div><div class="card" id="reviewDetailCard"><h3 id="reviewDetailTitle">Detalle del periodo</h3><div class="small" id="reviewDetailSub">Seleccione una celda con registros para revisar los insumos cargados.</div><div class="table-wrap" style="margin-top:12px;max-height:430px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Stock informado</th><th>Solicitud</th><th>Autorizado</th><th>Fuente</th></tr></thead><tbody id="reviewDetailBody"><tr><td colspan="6" class="small">Sin selección.</td></tr></tbody></table></div></div></section>
 <section id="history" class="hidden"><div class="card"><h2>Historial de pedidos cerrados</h2><div class="table-wrap"><table><thead><tr><th>Periodo</th><th>Servicio</th><th>Insumo</th><th>Unidad</th><th>Stock</th><th>Solicitado</th><th>Autorizado</th><th>Entregado</th><th>Saldo</th><th>Última entrega</th></tr></thead><tbody id="historyBody"></tbody></table></div></div></section>
 <section id="consumption" class="hidden">
 <div class="card">
@@ -313,16 +313,35 @@ function showGuide(){
   document.getElementById("backOrder").onclick=()=>openOrder(o.id);
 }
 function monthName(m){return ["","Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][Number(m)]||m;}
+
+function getReviewRecords(){
+  const live=[];
+  orders.forEach(o=>{
+    const year=Number(o.periods?.year), month=Number(o.periods?.month);
+    if(!year||!month)return;
+    (o.order_lines||[]).forEach(l=>live.push({
+      service_id:o.service_id, item_id:l.item_id, year, month, period_label:o.periods?.label||`${month}/${year}`,
+      current_stock:l.current_stock??null, requested:l.requested??null, authorized:l.authorized??null,
+      source_file:'Pedido sistema',
+      source_note:`${o.status} · ${fmtDateTime(o.submitted_at)}`,
+      items:l.items||null, services:o.services||null, _source:'live'
+    }));
+  });
+  const liveKeys=new Set(live.map(r=>`${r.service_id}-${r.item_id}-${r.year}-${r.month}`));
+  const imported=historical.filter(r=>!liveKeys.has(`${r.service_id}-${r.item_id}-${r.year}-${r.month}`));
+  return [...imported,...live];
+}
 function renderReview(){
   const yearSel=document.getElementById("reviewYear"); if(!yearSel)return;
-  const years=[...new Set(historical.map(r=>Number(r.year)).filter(Boolean))].sort((a,b)=>b-a);
+  const reviewRecords=getReviewRecords();
+  const years=[...new Set(reviewRecords.map(r=>Number(r.year)).filter(Boolean))].sort((a,b)=>b-a);
   if(!years.length)years.push(new Date().getFullYear());
   const prev=Number(yearSel.value)||years[0];
   yearSel.innerHTML=years.map(y=>`<option value="${y}">${y}</option>`).join("");
   yearSel.value=years.includes(prev)?String(prev):String(years[0]);
   yearSel.onchange=()=>{reviewSelection=null;renderReview();};
   const year=Number(yearSel.value);
-  const rows=historical.filter(r=>Number(r.year)===year);
+  const rows=reviewRecords.filter(r=>Number(r.year)===year);
   const by={};
   rows.forEach(r=>{const k=`${r.service_id}-${r.month}`;if(!by[k])by[k]={records:0,stock:0,requested:0,authorized:0};by[k].records++;if(r.current_stock!==null)by[k].stock++;if(r.requested!==null)by[k].requested++;if(r.authorized!==null)by[k].authorized++;});
   const servicesWith=new Set(rows.map(r=>String(r.service_id))).size;
@@ -346,7 +365,7 @@ function selectReviewCell(service_id,month,year){reviewSelection={service_id,mon
 function renderReviewDetail(){
   const sel=reviewSelection;if(!sel)return;
   const srv=services.find(s=>Number(s.id)===Number(sel.service_id));
-  const rows=historical.filter(r=>Number(r.service_id)===Number(sel.service_id)&&Number(r.year)===Number(sel.year)&&Number(r.month)===Number(sel.month)).sort((a,b)=>(a.items?.name||"").localeCompare(b.items?.name||"","es"));
+  const rows=getReviewRecords().filter(r=>Number(r.service_id)===Number(sel.service_id)&&Number(r.year)===Number(sel.year)&&Number(r.month)===Number(sel.month)).sort((a,b)=>(a.items?.name||"").localeCompare(b.items?.name||"","es"));
   document.getElementById("reviewDetailTitle").textContent=`${srv?.name||"Servicio"} — ${monthName(sel.month)} ${sel.year}`;
   if(!rows.length){document.getElementById("reviewDetailSub").textContent="No existen registros históricos cargados para este servicio y mes.";document.getElementById("reviewDetailBody").innerHTML='<tr><td colspan="6" class="small">Sin registros.</td></tr>';return;}
   const stockN=rows.filter(r=>r.current_stock!==null).length,reqN=rows.filter(r=>r.requested!==null).length;
