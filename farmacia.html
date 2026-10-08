@@ -52,7 +52,7 @@ table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}th{pos
 </div>
 </section>
 <section id="config" class="hidden">
-<div class="card"><h2>Configuración</h2><h3>Calendario</h3><p class="small">Puede modificar las fechas de apertura y cierre de cada periodo. Los cambios afectan el plazo mostrado al solicitante y la programación de avisos automáticos.</p><div id="periods"></div><div class="footer"><button class="secondary" id="addPeriod">+ Agregar periodo</button></div><div id="periodMsg"></div></div>
+<div class="card"><h2>Configuración</h2><h3>Calendario</h3><p class="small">Puede modificar las fechas de apertura y cierre de cada periodo. Los cambios afectan el plazo mostrado al solicitante y la programación de avisos automáticos.</p><div class="box" style="margin-bottom:14px"><div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap"><label style="min-width:150px">Crear año completo<input id="fullYear" type="number" min="2000" max="2100" step="1" style="width:100%"></label><button class="secondary" id="createFullYear">Crear año completo</button><div class="small" style="max-width:620px">Crea automáticamente los meses que falten del año seleccionado. Los periodos ya existentes no se duplican. Revise las fechas propuestas antes de utilizar cada periodo.</div></div></div><div id="periods"></div><div class="footer"><button class="secondary" id="addPeriod">+ Agregar periodo</button></div><div id="periodMsg"></div></div>
 <div class="card"><h3>Correos automáticos</h3><div class="alert info">Los correos se preparan según el calendario. El recordatorio de cierre se enviará solo a servicios que aún no hayan enviado su pedido.</div>
 <div class="grid4">
 <div class="box"><b>Aviso apertura</b><label><input id="openActive" type="checkbox"> Activo</label><br><input id="openDays" type="number" min="0" style="width:80px"> día(s) antes<br><select id="openType" style="margin-top:8px"><option value="business">Hábiles</option><option value="calendar">Corridos</option></select></div>
@@ -492,6 +492,8 @@ function renderConsumption(){
   }).join("");
 }
 function renderConfig(){
+  const fullYearInput=document.getElementById("fullYear");
+  if(fullYearInput&&!fullYearInput.value){const years=periods.map(p=>Number(p.year)).filter(Boolean);fullYearInput.value=years.length?Math.max(...years)+1:new Date().getFullYear();}
   document.getElementById("periods").innerHTML=periods.map(p=>`<div class="box" data-period="${p.id}" style="margin-bottom:10px"><div style="display:grid;grid-template-columns:minmax(150px,1.4fr) minmax(150px,1fr) minmax(150px,1fr) auto;gap:12px;align-items:end"><div><b>${esc(p.label)}</b><div class="small">${p.active===false?"Inactivo":"Activo"}</div></div><label>Apertura<input class="period-open" type="date" value="${esc(p.open_date||"")}" style="width:100%"></label><label>Cierre<input class="period-close" type="date" value="${esc(p.close_date||"")}" style="width:100%"></label><button class="savePeriod">Guardar fechas</button></div></div>`).join("");
   document.querySelectorAll(".savePeriod").forEach(btn=>btn.onclick=async()=>{
     const box=btn.closest("[data-period]"), id=Number(box.dataset.period), open=box.querySelector(".period-open").value, close=box.querySelector(".period-close").value;
@@ -512,6 +514,44 @@ function renderConfig(){
   document.getElementById("emailAutoStatus").innerHTML='<b>Configuración interna lista.</b> Falta conectar el proveedor que enviará físicamente los correos y activar la ejecución diaria.';
 }
 
+function dateForYearMonthDay(year,month,day){
+  const last=new Date(year,month,0).getDate();
+  return `${year}-${String(month).padStart(2,"0")}-${String(Math.min(day,last)).padStart(2,"0")}`;
+}
+function suggestedDatesForPeriod(year,month){
+  const previous=periods.find(p=>Number(p.year)===year-1&&Number(p.month)===month);
+  if(previous?.open_date&&previous?.close_date){
+    const openDay=Number(String(previous.open_date).slice(8,10))||15;
+    const closeDay=Number(String(previous.close_date).slice(8,10))||16;
+    return {open:dateForYearMonthDay(year,month,openDay),close:dateForYearMonthDay(year,month,Math.max(openDay,closeDay))};
+  }
+  return {open:dateForYearMonthDay(year,month,15),close:dateForYearMonthDay(year,month,16)};
+}
+document.getElementById("createFullYear").onclick=async()=>{
+  const input=document.getElementById("fullYear");
+  const fallback=(periods.length?Math.max(...periods.map(p=>Number(p.year)||0))+1:new Date().getFullYear());
+  const year=Number(input.value||prompt("Año a crear:",String(fallback)));
+  if(!year||year<2000||year>2100)return;
+  input.value=year;
+  const names=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+  const existing=new Set(periods.filter(p=>Number(p.year)===year).map(p=>Number(p.month)));
+  const missing=[];
+  for(let month=1;month<=12;month++){
+    if(existing.has(month))continue;
+    const d=suggestedDatesForPeriod(year,month);
+    missing.push({year,month,label:`${names[month-1]} ${year}`,open_date:d.open,close_date:d.close,active:true});
+  }
+  if(!missing.length){
+    document.getElementById("periodMsg").innerHTML=`<div class="alert info">El año ${year} ya tiene sus 12 periodos creados. No se agregó ningún duplicado.</div>`;
+    return;
+  }
+  const btn=document.getElementById("createFullYear");btn.disabled=true;
+  const {error}=await sb.from("periods").insert(missing);
+  btn.disabled=false;
+  if(error){alert("No fue posible crear el año completo: "+error.message);return;}
+  document.getElementById("periodMsg").innerHTML=`<div class="status">Año ${year} creado: ${missing.length} periodo(s) nuevo(s). ${12-missing.length} ya existían y se conservaron sin cambios. Revise las fechas de apertura y cierre propuestas.</div>`;
+  await loadAll();
+};
 document.getElementById("addPeriod").onclick=async()=>{
   const now=new Date();
   const year=Number(prompt("Año del nuevo periodo:", String(now.getFullYear())));
