@@ -52,7 +52,7 @@ table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}th{pos
 </div>
 </section>
 <section id="config" class="hidden">
-<div class="card"><h2>Configuración</h2><h3>Calendario</h3><div id="periods"></div></div>
+<div class="card"><h2>Configuración</h2><h3>Calendario</h3><p class="small">Puede modificar las fechas de apertura y cierre de cada periodo. Los cambios afectan el plazo mostrado al solicitante y la programación de avisos automáticos.</p><div id="periods"></div><div class="footer"><button class="secondary" id="addPeriod">+ Agregar periodo</button></div><div id="periodMsg"></div></div>
 <div class="card"><h3>Correos automáticos</h3><div class="alert info">Los correos se preparan según el calendario. El recordatorio de cierre se enviará solo a servicios que aún no hayan enviado su pedido.</div>
 <div class="grid4">
 <div class="box"><b>Aviso apertura</b><label><input id="openActive" type="checkbox"> Activo</label><br><input id="openDays" type="number" min="0" style="width:80px"> día(s) antes<br><select id="openType" style="margin-top:8px"><option value="business">Hábiles</option><option value="calendar">Corridos</option></select></div>
@@ -492,7 +492,18 @@ function renderConsumption(){
   }).join("");
 }
 function renderConfig(){
-  document.getElementById("periods").innerHTML=periods.map(p=>`<div class="box" style="margin-bottom:8px"><b>${esc(p.label)}</b> Apertura: ${p.open_date} · Cierre: ${p.close_date}</div>`).join("");
+  document.getElementById("periods").innerHTML=periods.map(p=>`<div class="box" data-period="${p.id}" style="margin-bottom:10px"><div style="display:grid;grid-template-columns:minmax(150px,1.4fr) minmax(150px,1fr) minmax(150px,1fr) auto;gap:12px;align-items:end"><div><b>${esc(p.label)}</b><div class="small">${p.active===false?"Inactivo":"Activo"}</div></div><label>Apertura<input class="period-open" type="date" value="${esc(p.open_date||"")}" style="width:100%"></label><label>Cierre<input class="period-close" type="date" value="${esc(p.close_date||"")}" style="width:100%"></label><button class="savePeriod">Guardar fechas</button></div></div>`).join("");
+  document.querySelectorAll(".savePeriod").forEach(btn=>btn.onclick=async()=>{
+    const box=btn.closest("[data-period]"), id=Number(box.dataset.period), open=box.querySelector(".period-open").value, close=box.querySelector(".period-close").value;
+    if(!open||!close){alert("Debe indicar fecha de apertura y cierre.");return;}
+    if(close<open){alert("La fecha de cierre no puede ser anterior a la apertura.");return;}
+    btn.disabled=true;
+    const {error}=await sb.from("periods").update({open_date:open,close_date:close}).eq("id",id);
+    btn.disabled=false;
+    if(error){alert("No fue posible guardar las fechas: "+error.message);return;}
+    document.getElementById("periodMsg").innerHTML='<div class="status">Fechas del periodo actualizadas.</div>';
+    await loadAll();
+  });
   const op=emailConfig.opening,cl=emailConfig.closing;
   if(op){openActive.checked=op.active;openDays.value=op.days_before;openType.value=op.day_type;openSubject.value=op.subject||"";openBody.value=op.body||""}
   if(cl){closeActive.checked=cl.active;closeDays.value=cl.days_before;closeType.value=cl.day_type;closeSubject.value=cl.subject||"";closeBody.value=cl.body||""}
@@ -500,6 +511,25 @@ function renderConfig(){
   document.getElementById("respBody").innerHTML=services.map(s=>{const r=byService[String(s.id)]||{};return `<tr data-service="${s.id}"><td><b>${esc(s.name)}</b></td><td><input class="pname" value="${esc(r.principal_name||"")}" style="width:180px"></td><td><input class="pemail" type="email" value="${esc(r.principal_email||"")}" style="width:240px"></td><td><input class="sname" value="${esc(r.substitute_name||"")}" style="width:180px"></td><td><input class="semail" type="email" value="${esc(r.substitute_email||"")}" style="width:240px"></td><td><input class="ractive" type="checkbox" ${r.active!==false?"checked":""}></td></tr>`}).join("");
   document.getElementById("emailAutoStatus").innerHTML='<b>Configuración interna lista.</b> Falta conectar el proveedor que enviará físicamente los correos y activar la ejecución diaria.';
 }
+
+document.getElementById("addPeriod").onclick=async()=>{
+  const now=new Date();
+  const year=Number(prompt("Año del nuevo periodo:", String(now.getFullYear())));
+  if(!year||year<2000||year>2100)return;
+  const month=Number(prompt("Mes (1 a 12):", String(now.getMonth()+1)));
+  if(!month||month<1||month>12)return;
+  const names=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+  const label=`${names[month-1]} ${year}`;
+  const open=prompt(`Fecha de apertura para ${label} (AAAA-MM-DD):`,`${year}-${String(month).padStart(2,"0")}-01`);
+  if(!open)return;
+  const close=prompt(`Fecha de cierre para ${label} (AAAA-MM-DD):`,open);
+  if(!close)return;
+  if(close<open){alert("La fecha de cierre no puede ser anterior a la apertura.");return;}
+  const {error}=await sb.from("periods").insert({year,month,label,open_date:open,close_date:close,active:true});
+  if(error){alert("No fue posible agregar el periodo: "+error.message);return;}
+  document.getElementById("periodMsg").innerHTML='<div class="status">Nuevo periodo agregado.</div>';
+  await loadAll();
+};
 document.getElementById("saveConfig").onclick=async()=>{
  const updates=[
   {key:"opening",active:openActive.checked,days_before:Number(openDays.value||0),day_type:openType.value,subject:openSubject.value.trim(),body:openBody.value.trim(),updated_at:new Date().toISOString()},
