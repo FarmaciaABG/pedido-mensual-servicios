@@ -1,0 +1,198 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pedido mensual</title><style>:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#dfe5ee;--brand:#1f5b8f;--brand2:#0f416d;--soft:#eaf3fb;--warn:#fff5cc;--warnb:#d6a600;--danger:#fde8e8;--dangerb:#d64545;--ok:#e8f7ec;--okb:#2f8f4e}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{background:linear-gradient(135deg,var(--brand2),var(--brand));color:#fff;padding:18px 26px}header h1{margin:0;font-size:22px}header p{margin:4px 0 0;opacity:.9;font-size:13px}
+.shell{max-width:1450px;margin:auto;padding:24px}.card,.meta,.metric{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 2px 10px rgba(24,39,75,.05)}.card{padding:18px;margin-bottom:18px}
+.topbar{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:12px;margin-bottom:18px}.meta,.metric{padding:14px 16px}.meta b,.metric b{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}.meta span{font-weight:700}.metric strong{font-size:24px}
+input,select,textarea,button{font:inherit}input,select,textarea{border:1px solid #cfd7e3;border-radius:9px;padding:9px 10px;background:white;color:var(--text)}input[type=number]{width:105px}textarea{width:100%;min-height:74px}
+button,.btn{border:0;border-radius:9px;padding:10px 14px;cursor:pointer;font-weight:700;background:var(--brand);color:#fff;text-decoration:none;display:inline-block}.secondary{background:#eef2f7;color:#23324b}.ghost{background:#fff;border:1px solid var(--line);color:#23324b}
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}th{position:sticky;top:0;background:#edf3f8;color:#334155;text-align:left;padding:10px;border-bottom:1px solid var(--line);z-index:1}td{padding:9px 10px;border-bottom:1px solid #edf0f4;vertical-align:top}tbody tr:hover{background:#fafcff}.table-wrap{max-height:540px;overflow:auto;border:1px solid var(--line);border-radius:12px}
+.small{font-size:12px;color:var(--muted)}.tag{display:inline-flex;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700}.ok{background:var(--ok);color:#246d3a}.warnTag{background:var(--warn);color:#7a5a00}.muted{background:#eef2f7;color:#586275}.sent{background:#e8f2fb;color:#225f8e}.review{background:#fff3d1;color:#7c5c00}.closed{background:#e7f6ec;color:#277242}
+.alert{margin-top:7px;padding:8px 10px;border-radius:8px;font-size:12px}.alert.warn{background:var(--warn);border-left:4px solid var(--warnb)}.alert.info{background:var(--soft);border-left:4px solid var(--brand)}.alert.danger{background:var(--danger);border-left:4px solid var(--dangerb)}
+.filters,.toolbar,.footer{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.pill{padding:7px 11px;border-radius:999px;background:#eef2f7;color:#314158;font-size:12px;font-weight:700;cursor:pointer}.pill.active{background:var(--brand);color:#fff}.footer{justify-content:flex-end;margin-top:16px}
+.hidden{display:none!important}.grid4{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:10px}.box{border:1px solid var(--line);border-radius:10px;padding:11px;background:#fafcff}.box b{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px}
+.login{max-width:500px;margin:48px auto}.status{padding:10px 12px;border-radius:10px;margin:10px 0;background:var(--ok)}.late{background:var(--warn)}
+@media(max-width:900px){.topbar,.grid4{grid-template-columns:1fr 1fr}.table-wrap{max-height:none}}@media(max-width:600px){.topbar,.grid4{grid-template-columns:1fr}}
+@media print{header,.no-print{display:none!important}.shell{padding:0}.card{box-shadow:none;border:0}}</style></head>
+<body><header><div style="display:flex;justify-content:space-between;align-items:center"><div><h1>Pedido mensual de servicios</h1><p id="headService"></p></div><a class="btn secondary" href="index.html">Inicio</a></div></header>
+<div class="shell">
+<div class="topbar"><div class="meta"><b>Periodo</b><span id="period"></span></div><div class="meta"><b>Servicio</b><span id="service"></span></div><div class="meta"><b>Responsable</b><span id="responsible"></span></div><div class="meta"><b>Plazo</b><span id="deadline"></span></div></div>
+<div id="timing"></div>
+<div id="requestCard" class="card"><h2>Listado de insumos autorizados</h2><p class="small">Complete stock actual solo en los insumos que solicitará. Las advertencias nunca restringen el pedido.</p>
+<div class="filters" style="margin:12px 0"><span class="pill active" data-filter="all">Todos</span><span class="pill" data-filter="requested">Solo solicitados</span><span id="countTag" class="tag muted">0 solicitados</span></div>
+<div class="table-wrap"><table><thead><tr><th style="min-width:330px">Insumo</th><th>Unidad</th><th>Último stock informado</th><th>Stock actual</th><th>Solicitud</th><th>Estado</th></tr></thead><tbody id="itemsBody"></tbody></table></div>
+<div class="toolbar" style="margin-top:14px"><input id="search" placeholder="Buscar insumo (mínimo 3 caracteres)" style="min-width:320px"><button class="ghost" id="clear">Limpiar búsqueda</button></div>
+<div class="footer"><button id="review">Siguiente / revisar pedido</button></div></div>
+<div id="summaryCard" class="card hidden"><h2>Resumen del pedido</h2><div class="table-wrap"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Último stock informado</th><th>Stock actual</th><th>Solicitud</th><th>Estado</th></tr></thead><tbody id="summaryBody"></tbody></table></div><div id="validation"></div><div class="footer"><button class="secondary" id="back">Volver a editar</button><button id="send">Enviar pedido a Farmacia</button></div></div>
+<div id="sentCard" class="card hidden"><h2>Pedido enviado</h2><div class="status">✓ Pedido enviado correctamente a Farmacia.</div><div id="sentData"></div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://qomszvnpuhtlnrykcyxb.supabase.co";
+const SUPABASE_KEY = "sb_publishable_zhMUi-mweEAwW1Wpr4N6Dw_PGv8QNTN";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function esc(s){
+  return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+}
+function fmtDateTime(s){
+  if(!s) return "—";
+  return new Date(s).toLocaleString("es-CL");
+}
+function todayISO(){
+  const d=new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+</script>
+
+<script>
+const raw=sessionStorage.getItem("pedido_request_context");
+if(!raw) location.href="solicitar.html";
+const ctx=JSON.parse(raw);
+let items=[], state=[], filter="all";
+
+document.getElementById("headService").textContent=ctx.service.name;
+document.getElementById("period").textContent=ctx.period.label;
+document.getElementById("service").textContent=ctx.service.name;
+document.getElementById("responsible").textContent=ctx.name;
+document.getElementById("deadline").textContent=ctx.period.open_date+" al "+ctx.period.close_date;
+const timing=document.getElementById("timing");
+if(todayISO()>ctx.period.close_date){timing.className="status late";timing.textContent="El plazo finalizó. Puede enviar, pero quedará registrado como FUERA DE PLAZO.";}
+else{timing.className="status";timing.textContent="Periodo vigente según calendario configurado."}
+
+async function init(){
+  const [catalogRes, stockRes, metricsRes] = await Promise.all([
+    sb.from("service_items")
+      .select("item_id,items(id,name,unit)")
+      .eq("service_id",ctx.service.id).eq("enabled",true),
+    sb.rpc("get_last_reported_stock",{
+      p_service_id:ctx.service.id,
+      p_period_id:ctx.period.id
+    }),
+    sb.rpc("get_service_consumption_metrics",{
+      p_service_id:ctx.service.id,
+      p_period_id:ctx.period.id
+    })
+  ]);
+
+  if(catalogRes.error){
+    document.getElementById("requestCard").innerHTML='<div class="alert danger">'+esc(catalogRes.error.message)+'</div>';
+    return;
+  }
+  if(stockRes.error){
+    document.getElementById("requestCard").innerHTML='<div class="alert danger">No fue posible recuperar el último stock informado: '+esc(stockRes.error.message)+'</div>';
+    return;
+  }
+  if(metricsRes.error){
+    document.getElementById("requestCard").innerHTML='<div class="alert danger">No fue posible recuperar el historial de consumo: '+esc(metricsRes.error.message)+'</div>';
+    return;
+  }
+
+  const lastStockByItem = Object.fromEntries(
+    (stockRes.data || []).map(x => [String(x.item_id), x])
+  );
+  const metricsByItem = Object.fromEntries(
+    (metricsRes.data || []).map(x => [String(x.item_id), x])
+  );
+
+  items=catalogRes.data.map(x=>x.items).filter(Boolean).sort((a,b)=>a.name.localeCompare(b.name,"es"));
+  state=items.map(it=>{
+    const prev=lastStockByItem[String(it.id)];
+    const metric=metricsByItem[String(it.id)] || {};
+    return {
+      stock:"",
+      qty:"",
+      lastStock: prev ? prev.last_stock : null,
+      lastPeriod: prev ? prev.last_period_label : null,
+      validMonths: Number(metric.valid_months || 0),
+      avg3: metric.avg_3m===null || metric.avg_3m===undefined ? null : Number(metric.avg_3m)
+    };
+  });
+  render();
+}
+
+function fmtNum(n,digits=1){
+  return Number(n).toLocaleString("es-CL",{maximumFractionDigits:digits});
+}
+function coverageStatus(i){
+  const s=state[i],req=Number(s.qty)>0;
+  if(!req) return {html:'<span class="tag ok">Sin bloqueo</span>', text:"Sin advertencia"};
+  if(s.stock==="") return {html:'<div class="alert danger">Debe informar stock actual.</div>', text:"Debe informar stock actual."};
+  if(s.avg3===null || s.validMonths<3){
+    return {
+      html:'<div class="alert info"><b>Historial insuficiente para estimar cobertura.</b><div class="small">Se requieren al menos 3 meses válidos de consumo.</div></div>',
+      text:"Historial insuficiente para estimar cobertura."
+    };
+  }
+  if(s.avg3<=0){
+    return {
+      html:'<div class="alert info">Promedio 3M igual a 0. No es posible estimar cobertura en meses.</div>',
+      text:"Promedio 3M igual a 0; cobertura no calculable."
+    };
+  }
+  const stock=Number(s.stock), qty=Number(s.qty||0);
+  const current=stock/s.avg3, projected=(stock+qty)/s.avg3;
+  const detail=`<div class="small">Promedio mensual 3M: ${fmtNum(s.avg3,2)} · cobertura actual: ${fmtNum(current,1)} meses · proyectada: ${fmtNum(projected,1)} meses</div>`;
+  if(current>=3){
+    return {
+      html:`<div class="alert warn"><b>Posible sobrestock.</b> El stock actual equivale a ${fmtNum(current,1)} meses de cobertura.${detail}</div>`,
+      text:`Posible sobrestock: ${fmtNum(current,1)} meses actuales; ${fmtNum(projected,1)} meses proyectados.`
+    };
+  }
+  if(projected>=3){
+    return {
+      html:`<div class="alert warn"><b>Revise la cantidad solicitada.</b> Con este pedido la cobertura estimada subiría a ${fmtNum(projected,1)} meses.${detail}</div>`,
+      text:`Cobertura proyectada elevada: ${fmtNum(projected,1)} meses.`
+    };
+  }
+  if(current>=2 || projected>=2){
+    return {
+      html:`<div class="alert info"><b>Stock suficiente.</b> Revise si la cantidad solicitada es necesaria.${detail}</div>`,
+      text:`Stock suficiente: ${fmtNum(current,1)} meses actuales; ${fmtNum(projected,1)} meses proyectados.`
+    };
+  }
+  return {
+    html:`<span class="tag ok">Sin advertencia de sobrestock</span>${detail}`,
+    text:`Sin advertencia: ${fmtNum(current,1)} meses actuales; ${fmtNum(projected,1)} meses proyectados.`
+  };
+}
+
+function render(){
+  const q=document.getElementById("search").value.trim().toLowerCase(),tb=document.getElementById("itemsBody");tb.innerHTML="";
+  items.forEach((it,i)=>{
+    const s=state[i], req=Number(s.qty)>0;
+    if(q.length>=3&&!it.name.toLowerCase().includes(q))return;
+    if(filter==="requested"&&!req)return;
+    const tr=document.createElement("tr");
+    const lastStockHtml = s.lastStock===null || s.lastStock===undefined
+      ? '<span class="tag muted">Sin dato anterior</span>'
+      : `<b>${esc(s.lastStock)}</b><div class="small">${esc(s.lastPeriod || "")}</div>`;
+    tr.innerHTML=`<td><b>${esc(it.name)}</b></td><td>${esc(it.unit)}</td><td>${lastStockHtml}</td><td><input type="number" min="0" class="stock" value="${esc(s.stock)}"></td><td><input type="number" min="0" class="qty" value="${esc(s.qty)}"></td><td class="st">${coverageStatus(i).html}</td>`;
+    tb.appendChild(tr);
+    const ins=tr.querySelectorAll("input");
+    ins[0].oninput=e=>{state[i].stock=e.target.value;updateRow(tr,i)};
+    ins[1].oninput=e=>{state[i].qty=e.target.value;updateRow(tr,i)};
+  });
+  updateCount();
+}
+function updateRow(tr,i){tr.querySelector(".st").innerHTML=coverageStatus(i).html;updateCount();}
+function updateCount(){document.getElementById("countTag").textContent=state.filter(x=>Number(x.qty)>0).length+" solicitados";}
+function lines(){return items.map((it,i)=>({item_id:it.id,item:it.name,unit:it.unit,last_stock:state[i].lastStock,last_period:state[i].lastPeriod,current_stock:state[i].stock,requested:Number(state[i].qty||0),status_text:coverageStatus(i).text,status_html:coverageStatus(i).html})).filter(x=>x.requested>0);}
+function validate(){const ls=lines();if(!ls.length)return "Debe solicitar al menos un insumo.";if(ls.some(x=>x.current_stock===""))return "Todo insumo solicitado debe tener stock actual informado.";if(ls.some(x=>x.requested<0||Number(x.current_stock)<0))return "No se permiten cantidades negativas.";return "";}
+document.querySelectorAll(".pill").forEach(x=>x.onclick=()=>{document.querySelectorAll(".pill").forEach(y=>y.classList.remove("active"));x.classList.add("active");filter=x.dataset.filter;render();});
+document.getElementById("search").oninput=e=>{if(e.target.value.trim().length===0||e.target.value.trim().length>=3)render()};
+document.getElementById("clear").onclick=()=>{document.getElementById("search").value="";render();};
+document.getElementById("review").onclick=()=>{const tb=document.getElementById("summaryBody");tb.innerHTML="";lines().forEach(l=>{const tr=document.createElement("tr");tr.innerHTML=`<td>${esc(l.item)}</td><td>${esc(l.unit)}</td><td>${l.last_stock===null||l.last_stock===undefined?'<span class="tag muted">Sin dato anterior</span>':`<b>${esc(l.last_stock)}</b><div class="small">${esc(l.last_period||"")}</div>`}</td><td>${esc(l.current_stock)}</td><td>${l.requested}</td><td>${l.status_html}</td>`;tb.appendChild(tr);});const err=validate();document.getElementById("validation").innerHTML=err?`<div class="alert danger">${err}</div>`:'<div class="alert info"><b>Revise las cantidades antes de enviar.</b> Las alertas de stock y cobertura son informativas y nunca bloquean el pedido.</div>';document.getElementById("send").disabled=!!err;document.getElementById("requestCard").classList.add("hidden");document.getElementById("summaryCard").classList.remove("hidden");};
+document.getElementById("back").onclick=()=>{document.getElementById("summaryCard").classList.add("hidden");document.getElementById("requestCard").classList.remove("hidden");};
+document.getElementById("send").onclick=async()=>{
+  const err=validate(); if(err)return;
+  document.getElementById("send").disabled=true;
+  const payload=lines().map(l=>({item_id:l.item_id,current_stock:Number(l.current_stock),requested:l.requested}));
+  const {data,error}=await sb.rpc("submit_order",{p_service_id:ctx.service.id,p_period_id:ctx.period.id,p_requester_name:ctx.name,p_lines:payload});
+  if(error){document.getElementById("validation").innerHTML='<div class="alert danger">'+esc(error.message)+'</div>';document.getElementById("send").disabled=false;return;}
+  document.getElementById("summaryCard").classList.add("hidden");document.getElementById("sentCard").classList.remove("hidden");
+  document.getElementById("sentData").innerHTML=`<p><b>Servicio:</b> ${esc(ctx.service.name)}</p><p><b>Periodo:</b> ${esc(ctx.period.label)}</p><p><b>Realizado por:</b> ${esc(ctx.name)}</p><p><b>Fecha/hora:</b> ${fmtDateTime(new Date().toISOString())}</p><p><b>Estado:</b> Enviado a Farmacia</p>`;
+  sessionStorage.removeItem("pedido_request_context");
+};
+init();
+</script></body></html>
