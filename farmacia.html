@@ -53,6 +53,7 @@ table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}th{pos
 </section>
 <section id="config" class="hidden">
 <div class="card"><h2>Configuración</h2><h3>Calendario</h3><p class="small">Puede modificar las fechas de apertura y cierre de cada periodo. Los cambios afectan el plazo mostrado al solicitante y la programación de avisos automáticos.</p><div class="box" style="margin-bottom:14px"><div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap"><label style="min-width:150px">Crear año completo<input id="fullYear" type="number" min="2000" max="2100" step="1" style="width:100%"></label><button class="secondary" id="createFullYear">Crear año completo</button><div class="small" style="max-width:620px">Crea automáticamente los meses que falten del año seleccionado. Los periodos ya existentes no se duplican. Revise las fechas propuestas antes de utilizar cada periodo.</div></div></div><div id="periods"></div><div class="footer"><button class="secondary" id="addPeriod">+ Agregar periodo</button></div><div id="periodMsg"></div></div>
+<div class="card"><h3>Insumos autorizados por servicio</h3><p class="small">Define qué insumos podrá ver y solicitar cada servicio. Los cambios se aplican inmediatamente al formulario de solicitud y no modifican pedidos ya enviados.</p><div class="toolbar" style="margin-top:12px"><select id="permService" style="min-width:260px"></select><input id="permSearch" placeholder="Buscar insumo" style="min-width:260px"><button class="secondary" id="permCheckVisible">Autorizar visibles</button><button class="secondary" id="permUncheckVisible">Quitar visibles</button></div><div class="table-wrap" style="margin-top:12px;max-height:520px"><table><thead><tr><th>Autorizar</th><th>Insumo</th><th>Unidad</th></tr></thead><tbody id="permBody"></tbody></table></div><div class="footer"><button id="savePermissions">Guardar autorizaciones</button></div><div id="permMsg"></div></div>
 <div class="card"><h3>Correos automáticos</h3><div class="alert info">Los correos se preparan según el calendario. El recordatorio de cierre se enviará solo a servicios que aún no hayan enviado su pedido.</div>
 <div class="grid4">
 <div class="box"><b>Aviso apertura</b><label><input id="openActive" type="checkbox"> Activo</label><br><input id="openDays" type="number" min="0" style="width:80px"> día(s) antes<br><select id="openType" style="margin-top:8px"><option value="business">Hábiles</option><option value="calendar">Corridos</option></select></div>
@@ -86,7 +87,7 @@ function todayISO(){
 </script>
 
 <script>
-let orders=[], periods=[], emailConfig={}, historical=[], services=[], serviceResponsibles=[], deliveryEvents=[], deliveryLines=[], activeOrder=null, reviewSelection=null;
+let orders=[], periods=[], emailConfig={}, historical=[], services=[], items=[], serviceItems=[], serviceResponsibles=[], deliveryEvents=[], deliveryLines=[], activeOrder=null, reviewSelection=null;
 
 async function ensureAuth(){
   const {data:{session}}=await sb.auth.getSession();
@@ -94,21 +95,23 @@ async function ensureAuth(){
   return true;
 }
 async function loadAll(){
-  const [o,p,e,h,srv,it,de,dl,resp] = await Promise.all([
+  const [o,p,e,h,srv,it,si,de,dl,resp] = await Promise.all([
     sb.from("orders").select("*,services(name),periods(label,year,month),order_lines(*,items(name,unit))").order("submitted_at",{ascending:false}),
     sb.from("periods").select("*").order("year").order("month"),
     sb.from("email_config").select("*"),
     sb.from("historical_service_records").select("*").order("year").order("month"),
     sb.from("services").select("id,name,active").eq("active",true).order("id"),
-    sb.from("items").select("id,name,unit"),
+    sb.from("items").select("id,name,unit,active").eq("active",true).order("name"),
+    sb.from("service_items").select("service_id,item_id,enabled"),
     sb.from("delivery_events").select("*").order("delivered_at",{ascending:true}),
     sb.from("delivery_lines").select("*").order("id",{ascending:true}),
     sb.from("service_responsibles").select("*").order("service_id")
   ]);
-  for(const r of [o,p,e,h,srv,it,de,dl,resp]) if(r.error) throw r.error;
+  for(const r of [o,p,e,h,srv,it,si,de,dl,resp]) if(r.error) throw r.error;
   orders=o.data||[]; periods=p.data||[]; emailConfig=Object.fromEntries((e.data||[]).map(x=>[x.key,x])); services=srv.data||[];
+  items=it.data||[]; serviceItems=si.data||[];
   deliveryEvents=de.data||[]; deliveryLines=dl.data||[]; serviceResponsibles=resp.data||[];
-  const itemsById=Object.fromEntries((it.data||[]).map(x=>[String(x.id),x]));
+  const itemsById=Object.fromEntries(items.map(x=>[String(x.id),x]));
   const servicesById=Object.fromEntries(services.map(x=>[String(x.id),x]));
   historical=(h.data||[]).map(r=>({...r,items:itemsById[String(r.item_id)]||null,services:servicesById[String(r.service_id)]||null}));
   renderAll();
@@ -491,6 +494,45 @@ function renderConsumption(){
     return `<tr><td><b>${esc(srv)}</b></td><td><div><b>${esc(x.name)}</b></div><div class="small">${esc(x.unit)}</div></td><td>${stock}</td><td>${delivery}</td><td>${last}</td><td>${avg}</td><td>${cov}</td><td><span class="tag ${x.statusClass}" style="white-space:normal;line-height:1.35">${esc(x.status)}</span></td></tr>`;
   }).join("");
 }
+
+function permissionMapForService(serviceId){
+  const map={};
+  serviceItems.filter(x=>Number(x.service_id)===Number(serviceId)).forEach(x=>map[String(x.item_id)]=x.enabled!==false);
+  return map;
+}
+function renderPermissions(){
+  const sel=document.getElementById("permService"),body=document.getElementById("permBody"),search=document.getElementById("permSearch");
+  if(!sel||!body||!search)return;
+  const previous=sel.value;
+  sel.innerHTML=services.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("");
+  if(previous&&[...sel.options].some(o=>o.value===previous))sel.value=previous;
+  if(!sel.value&&sel.options.length)sel.selectedIndex=0;
+  const sid=Number(sel.value||0),q=search.value.trim().toLowerCase(),current=permissionMapForService(sid);
+  const rows=items.filter(i=>!q||String(i.name||"").toLowerCase().includes(q));
+  body.innerHTML=rows.map(i=>`<tr data-item="${i.id}"><td><input class="permToggle" type="checkbox" ${current[String(i.id)]?"checked":""}></td><td><b>${esc(i.name)}</b></td><td>${esc(i.unit||"—")}</td></tr>`).join("");
+  document.getElementById("permMsg").innerHTML=`<div class="small">${Object.values(current).filter(Boolean).length} insumo(s) autorizados actualmente para este servicio.</div>`;
+  sel.onchange=renderPermissions;
+  search.oninput=renderPermissions;
+}
+function setVisiblePermission(value){
+  document.querySelectorAll("#permBody .permToggle").forEach(c=>c.checked=value);
+}
+async function savePermissions(){
+  const sid=Number(document.getElementById("permService").value||0);
+  if(!sid)return;
+  const current=permissionMapForService(sid),changes=[];
+  document.querySelectorAll("#permBody tr[data-item]").forEach(tr=>{
+    const itemId=Number(tr.dataset.item),enabled=tr.querySelector(".permToggle").checked;
+    if(Boolean(current[String(itemId)])!==enabled)changes.push({service_id:sid,item_id:itemId,enabled});
+  });
+  if(!changes.length){document.getElementById("permMsg").innerHTML='<div class="alert info">No hay cambios para guardar.</div>';return;}
+  const btn=document.getElementById("savePermissions");btn.disabled=true;
+  const {error}=await sb.from("service_items").upsert(changes,{onConflict:"service_id,item_id"});
+  btn.disabled=false;
+  if(error){document.getElementById("permMsg").innerHTML=`<div class="alert danger">${esc(error.message)}</div>`;return;}
+  document.getElementById("permMsg").innerHTML=`<div class="status">Autorizaciones actualizadas: ${changes.length} cambio(s).</div>`;
+  await loadAll();
+}
 function renderConfig(){
   const fullYearInput=document.getElementById("fullYear");
   if(fullYearInput&&!fullYearInput.value){const years=periods.map(p=>Number(p.year)).filter(Boolean);fullYearInput.value=years.length?Math.max(...years)+1:new Date().getFullYear();}
@@ -506,6 +548,7 @@ function renderConfig(){
     document.getElementById("periodMsg").innerHTML='<div class="status">Fechas del periodo actualizadas.</div>';
     await loadAll();
   });
+  renderPermissions();
   const op=emailConfig.opening,cl=emailConfig.closing;
   if(op){openActive.checked=op.active;openDays.value=op.days_before;openType.value=op.day_type;openSubject.value=op.subject||"";openBody.value=op.body||""}
   if(cl){closeActive.checked=cl.active;closeDays.value=cl.days_before;closeType.value=cl.day_type;closeSubject.value=cl.subject||"";closeBody.value=cl.body||""}
@@ -570,6 +613,9 @@ document.getElementById("addPeriod").onclick=async()=>{
   document.getElementById("periodMsg").innerHTML='<div class="status">Nuevo periodo agregado.</div>';
   await loadAll();
 };
+document.getElementById("permCheckVisible").onclick=()=>setVisiblePermission(true);
+document.getElementById("permUncheckVisible").onclick=()=>setVisiblePermission(false);
+document.getElementById("savePermissions").onclick=savePermissions;
 document.getElementById("saveConfig").onclick=async()=>{
  const updates=[
   {key:"opening",active:openActive.checked,days_before:Number(openDays.value||0),day_type:openType.value,subject:openSubject.value.trim(),body:openBody.value.trim(),updated_at:new Date().toISOString()},
