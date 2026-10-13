@@ -53,7 +53,7 @@ table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}th{pos
 </section>
 <section id="config" class="hidden">
 <div class="card"><h2>Configuración</h2><h3>Calendario</h3><p class="small">Puede modificar las fechas de apertura y cierre de cada periodo. Los cambios afectan el plazo mostrado al solicitante y la programación de avisos automáticos.</p><div class="box" style="margin-bottom:14px"><div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap"><label style="min-width:150px">Crear año completo<input id="fullYear" type="number" min="2000" max="2100" step="1" style="width:100%"></label><button class="secondary" id="createFullYear">Crear año completo</button><div class="small" style="max-width:620px">Crea automáticamente los meses que falten del año seleccionado. Los periodos ya existentes no se duplican. Revise las fechas propuestas antes de utilizar cada periodo.</div></div></div><div id="periods"></div><div class="footer"><button class="secondary" id="addPeriod">+ Agregar periodo</button></div><div id="periodMsg"></div></div>
-<div class="card"><h3>Catálogo de insumos</h3><p class="small">Cree nuevos insumos y corrija su unidad de medida. Los cambios de unidad se aplican hacia adelante y no alteran las cantidades registradas en pedidos anteriores.</p><div class="box" style="margin-bottom:14px"><div style="display:grid;grid-template-columns:minmax(260px,2fr) minmax(180px,1fr) auto;gap:12px;align-items:end"><label>Nombre del nuevo insumo<input id="newItemName" placeholder="Ej.: Venda elástica 10 cm" style="width:100%"></label><label>Unidad<input id="newItemUnit" list="unitSuggestions" placeholder="Ej.: unidades" style="width:100%"></label><button id="createItem">Crear insumo</button></div><datalist id="unitSuggestions"><option value="unidades"><option value="caja (x100)"><option value="cajas"><option value="frascos"><option value="pares"><option value="rollos"><option value="sobres"><option value="litros"><option value="ml"><option value="kits"></datalist><div id="newItemMsg"></div></div><div class="toolbar"><input id="itemCatalogSearch" placeholder="Buscar insumo" style="min-width:280px"></div><div class="table-wrap" style="margin-top:12px;max-height:520px"><table><thead><tr><th>Insumo</th><th>Unidad actual</th><th>Cambiar unidad</th></tr></thead><tbody id="itemCatalogBody"></tbody></table></div><div id="itemCatalogMsg"></div></div>
+<div class="card"><h3>Catálogo de insumos</h3><p class="small">Cree nuevos insumos, corrija su unidad de medida o elimínelos del catálogo activo. Al eliminar un insumo no se borran sus pedidos ni su historial: queda inactivo y deja de estar disponible para nuevas solicitudes.</p><div class="box" style="margin-bottom:14px"><div style="display:grid;grid-template-columns:minmax(260px,2fr) minmax(180px,1fr) auto;gap:12px;align-items:end"><label>Nombre del nuevo insumo<input id="newItemName" placeholder="Ej.: Venda elástica 10 cm" style="width:100%"></label><label>Unidad<input id="newItemUnit" list="unitSuggestions" placeholder="Ej.: unidades" style="width:100%"></label><button id="createItem">Crear insumo</button></div><datalist id="unitSuggestions"><option value="unidades"><option value="caja (x100)"><option value="cajas"><option value="frascos"><option value="pares"><option value="rollos"><option value="sobres"><option value="litros"><option value="ml"><option value="kits"></datalist><div id="newItemMsg"></div></div><div class="toolbar"><input id="itemCatalogSearch" placeholder="Buscar insumo" style="min-width:280px"><label class="small"><input id="showInactiveItems" type="checkbox"> Mostrar eliminados/inactivos</label></div><div class="table-wrap" style="margin-top:12px;max-height:520px"><table><thead><tr><th>Insumo</th><th>Unidad actual</th><th>Cambiar unidad</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="itemCatalogBody"></tbody></table></div><div id="itemCatalogMsg"></div></div>
 <div class="card"><h3>Insumos autorizados por servicio</h3><p class="small">Define qué insumos podrá ver y solicitar cada servicio. Los cambios se aplican inmediatamente al formulario de solicitud y no modifican pedidos ya enviados.</p><div class="toolbar" style="margin-top:12px"><select id="permService" style="min-width:260px"></select><input id="permSearch" placeholder="Buscar insumo" style="min-width:260px"><button class="secondary" id="permCheckVisible">Autorizar visibles</button><button class="secondary" id="permUncheckVisible">Quitar visibles</button></div><div class="table-wrap" style="margin-top:12px;max-height:520px"><table><thead><tr><th>Autorizar</th><th>Insumo</th><th>Unidad</th></tr></thead><tbody id="permBody"></tbody></table></div><div class="footer"><button id="savePermissions">Guardar autorizaciones</button></div><div id="permMsg"></div></div>
 <div class="card"><h3>Correos automáticos</h3><div class="alert info">Los correos se preparan según el calendario. El recordatorio de cierre se enviará solo a servicios que aún no hayan enviado su pedido.</div>
 <div class="grid4">
@@ -102,7 +102,7 @@ async function loadAll(){
     sb.from("email_config").select("*"),
     sb.from("historical_service_records").select("*").order("year").order("month"),
     sb.from("services").select("id,name,active").eq("active",true).order("id"),
-    sb.from("items").select("id,name,unit,active").eq("active",true).order("name"),
+    sb.from("items").select("id,name,unit,active").order("name"),
     sb.from("service_items").select("service_id,item_id,enabled"),
     sb.from("delivery_events").select("*").order("delivered_at",{ascending:true}),
     sb.from("delivery_lines").select("*").order("id",{ascending:true}),
@@ -119,12 +119,20 @@ async function loadAll(){
 }
 function renderAll(){renderMetrics();renderOrders();renderPendingDeliveries();renderConsolidated();renderReview();renderHistory();renderConsumption();renderConfig();}
 function getDashboardPeriod(){
-  const activePeriods=periods.filter(p=>p.active!==false);
+  const activePeriods=periods
+    .filter(p=>p.active!==false)
+    .slice()
+    .sort((a,b)=>(Number(a.year)-Number(b.year))||(Number(a.month)-Number(b.month)));
   if(!activePeriods.length)return null;
+
   const today=todayISO();
-  // Misma lógica del flujo solicitante: primer periodo cuyo cierre aún no ha pasado.
-  const current=activePeriods.find(p=>!p.close_date || today<=p.close_date);
-  return current||activePeriods[activePeriods.length-1];
+  // El periodo cambia cuando comienza la apertura del siguiente periodo.
+  // Entre el cierre de un mes y la apertura del siguiente, se mantiene el último periodo abierto.
+  const opened=activePeriods.filter(p=>!p.open_date || p.open_date<=today);
+  if(opened.length)return opened[opened.length-1];
+
+  // Si aún no abre ningún periodo configurado, mostrar el primero próximo.
+  return activePeriods[0];
 }
 function renderMetrics(){
   const currentPeriod=getDashboardPeriod();
@@ -240,7 +248,8 @@ async function openOrder(id){
   const deliveryHistory=deliveryEvents.filter(e=>e.order_id===o.id).sort((a,b)=>new Date(a.delivered_at)-new Date(b.delivered_at));
   document.getElementById("detail").innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div><h2>Pedido — ${esc(o.services.name)}</h2><div class="small">${esc(o.periods.label)} · ${esc(o.status)}</div></div><button class="secondary" id="backDash">← Volver</button></div>
   <div class="alert info"><b>Entregas parciales:</b> "Autorizado total" corresponde a lo que Farmacia compromete para este pedido. Registre en "Entregar ahora" solo lo que efectivamente se entrega en esta ocasión. El saldo queda disponible para una entrega posterior.</div>
-  <div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Stock actual</th><th>Solicitado</th><th>Autorizado total</th><th>Entregado acumulado</th><th>Saldo pendiente</th>${closed?'':'<th>Entregar ahora</th>'}</tr></thead><tbody>${o.order_lines.map(l=>{const del=deliveredForLine(l.id),auth=Number(l.authorized??l.requested??0),pend=Math.max(0,auth-del);return `<tr data-id="${l.id}" data-delivered="${del}" data-requested="${l.requested}"><td>${esc(l.items.name)}</td><td>${esc(l.items.unit)}</td><td>${l.current_stock}</td><td>${l.requested}</td><td>${closed?`<b>${auth}</b>`:`<input class="auth" type="number" min="0" value="${auth}">`}</td><td><b>${del}</b></td><td class="pendingCell">${pend?`<span class="tag warnTag">${pend}</span>`:'<span class="tag ok">0</span>'}</td>${closed?'':`<td><input class="deliverNow" type="number" min="0" value="0"></td>`}</tr>`}).join("")}</tbody></table></div>
+  ${closed?'':`<div class="box" style="margin-top:14px"><b>Agregar insumo desde Farmacia</b><div class="small" style="margin-bottom:8px">Use esta opción si, durante la revisión, Farmacia decide incorporar un insumo que el servicio no había solicitado. No aumenta el total solicitado por los servicios en el consolidado.</div><div class="filters"><select id="phAddItem" style="min-width:360px"><option value="">Seleccione un insumo…</option>${items.filter(it=>it.active!==false&&!(o.order_lines||[]).some(l=>Number(l.item_id)===Number(it.id))).map(it=>`<option value="${it.id}">${esc(it.name)} · ${esc(it.unit)}</option>`).join("")}</select><input id="phAddQty" type="number" min="0.01" step="any" placeholder="Cantidad autorizada"><button id="phAddBtn">Agregar al pedido</button></div></div>`}
+  <div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Stock actual</th><th>Solicitado</th><th>Autorizado total</th><th>Entregado acumulado</th><th>Saldo pendiente</th>${closed?'':'<th>Entregar ahora</th>'}</tr></thead><tbody>${o.order_lines.map(l=>{const del=deliveredForLine(l.id),auth=Number(l.authorized??l.requested??0),pend=Math.max(0,auth-del);const pharmacyAdded=!!l.added_by_pharmacy;return `<tr data-id="${l.id}" data-delivered="${del}" data-requested="${l.requested}"><td>${esc(l.items.name)}${pharmacyAdded?' <span class="tag sent">Agregado por Farmacia</span>':''}</td><td>${esc(l.items.unit)}</td><td>${l.current_stock===null||l.current_stock===undefined?'<span class="small">No informado</span>':l.current_stock}</td><td>${pharmacyAdded?'<span class="small">No solicitado</span>':l.requested}</td><td>${closed?`<b>${auth}</b>`:`<input class="auth" type="number" min="0" value="${auth}">`}</td><td><b>${del}</b></td><td class="pendingCell">${pend?`<span class="tag warnTag">${pend}</span>`:'<span class="tag ok">0</span>'}</td>${closed?'':`<td><input class="deliverNow" type="number" min="0" value="0"></td>`}</tr>`}).join("")}</tbody></table></div>
   <br><label>Observación Farmacia</label><textarea id="obs" ${closed?'disabled':''}>${esc(o.pharmacy_observation||"")}</textarea>
   ${closed?'':`<br><br><label>Nombre de quien recibe esta entrega</label><input id="receiver" style="width:320px" value="">`}
   <div class="footer">${closed?'<button class="secondary" id="guideBtn">Generar / ver guía de entrega</button>':'<button class="secondary" id="saveAuthBtn">Guardar autorización</button><button id="deliverBtn">Registrar entrega</button><button class="secondary" id="guideBtn">Generar / ver guía de entrega</button>'}<button class="dangerBtn" id="deleteOrderBtn">Eliminar pedido</button></div><div class="small" style="margin-top:8px">La guía puede visualizarse e imprimirse aun cuando el pedido tenga entregas parciales. Eliminar está disponible solo en Control Farmacia. Al confirmar se borran también las líneas y entregas asociadas, y el servicio queda habilitado para enviar un nuevo pedido del mismo periodo.</div><div id="detailMsg"></div></div>
@@ -248,11 +257,29 @@ async function openOrder(id){
   document.getElementById("backDash").onclick=()=>{showSection("current");loadAll();};
   document.getElementById("deleteOrderBtn").onclick=deleteActiveOrder;
   const guideBtn=document.getElementById("guideBtn"); if(guideBtn) guideBtn.onclick=showGuide;
-  else{
-    document.getElementById("saveAuthBtn").onclick=saveAuthorization;
-    document.getElementById("deliverBtn").onclick=registerDelivery;
+  if(!closed){
+    const saveBtn=document.getElementById("saveAuthBtn"); if(saveBtn) saveBtn.onclick=saveAuthorization;
+    const deliverBtn=document.getElementById("deliverBtn"); if(deliverBtn) deliverBtn.onclick=registerDelivery;
+    const addBtn=document.getElementById("phAddBtn"); if(addBtn) addBtn.onclick=addPharmacyItem;
     document.querySelectorAll("#detail .auth").forEach(inp=>inp.oninput=refreshPendingPreview);
     document.querySelectorAll("#detail .deliverNow").forEach(inp=>inp.oninput=refreshPendingPreview);
+  }
+}
+async function addPharmacyItem(){
+  if(!activeOrder)return;
+  const itemId=Number(document.getElementById("phAddItem")?.value||0);
+  const qty=Number(document.getElementById("phAddQty")?.value||0);
+  if(!itemId){document.getElementById("detailMsg").innerHTML='<div class="alert danger">Seleccione un insumo.</div>';return;}
+  if(!(qty>0)){document.getElementById("detailMsg").innerHTML='<div class="alert danger">Ingrese una cantidad autorizada mayor que cero.</div>';return;}
+  const btn=document.getElementById("phAddBtn"); if(btn)btn.disabled=true;
+  try{
+    const {error}=await sb.rpc("pharmacy_add_order_item",{p_order_id:activeOrder.id,p_item_id:itemId,p_authorized:qty});
+    if(error)throw error;
+    await loadAll();
+    openOrder(activeOrder.id);
+  }catch(e){
+    if(btn)btn.disabled=false;
+    document.getElementById("detailMsg").innerHTML=`<div class="alert danger">${esc(e.message)}</div>`;
   }
 }
 async function deleteActiveOrder(){
@@ -313,7 +340,7 @@ async function registerDelivery(){
 }
 function showGuide(){
   const o=activeOrder,events=deliveryEvents.filter(e=>e.order_id===o.id).sort((a,b)=>new Date(a.delivered_at)-new Date(b.delivered_at));
-  document.getElementById("detail").innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between"><div><h2>Guía de entrega de insumos</h2></div><button class="secondary no-print" id="backOrder">← Volver</button></div><div class="grid4"><div class="box"><b>Servicio</b>${esc(o.services.name)}</div><div class="box"><b>Periodo</b>${esc(o.periods.label)}</div><div class="box"><b>Realizado por</b>${esc(o.requester_name)}</div><div class="box"><b>Estado</b>${esc(o.status)}</div><div class="box"><b>Última recepción</b>${esc(o.receiver_name||"—")} · ${fmtDateTime(o.received_at)}</div></div><div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Solicitado</th><th>Autorizado</th><th>Entregado acumulado</th><th>Saldo pendiente</th></tr></thead><tbody>${o.order_lines.map(l=>{const del=deliveredForLine(l.id),auth=Number(l.authorized??l.requested??0),pend=Math.max(0,auth-del);return `<tr><td>${esc(l.items.name)}</td><td>${esc(l.items.unit)}</td><td>${l.requested}</td><td>${auth}</td><td><b>${del}</b></td><td>${pend}</td></tr>`}).join("")}</tbody></table></div><h3>Detalle de entregas</h3><div class="table-wrap"><table><thead><tr><th>Fecha/hora</th><th>Recibido por</th><th>Detalle</th></tr></thead><tbody>${events.map(ev=>{const lines=deliveryLines.filter(dl=>dl.delivery_event_id===ev.id);return `<tr><td>${fmtDateTime(ev.delivered_at)}</td><td>${esc(ev.receiver_name)}</td><td>${lines.map(dl=>{const ol=o.order_lines.find(x=>Number(x.id)===Number(dl.order_line_id));return `${esc(ol?.items?.name||"Insumo")}: <b>${Number(dl.quantity)}</b>`}).join("<br>")}</td></tr>`}).join("")||'<tr><td colspan="3">Sin entregas registradas.</td></tr>'}</tbody></table></div><div class="footer no-print"><button onclick="window.print()">Imprimir guía</button></div></div>`;
+  document.getElementById("detail").innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between"><div><h2>Guía de entrega de insumos</h2></div><button class="secondary no-print" id="backOrder">← Volver</button></div><div class="grid4"><div class="box"><b>Servicio</b>${esc(o.services.name)}</div><div class="box"><b>Periodo</b>${esc(o.periods.label)}</div><div class="box"><b>Realizado por</b>${esc(o.requester_name)}</div><div class="box"><b>Estado</b>${esc(o.status)}</div><div class="box"><b>Última recepción</b>${esc(o.receiver_name||"—")} · ${fmtDateTime(o.received_at)}</div></div><div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Solicitado</th><th>Autorizado</th><th>Entregado acumulado</th><th>Saldo pendiente</th></tr></thead><tbody>${o.order_lines.map(l=>{const del=deliveredForLine(l.id),auth=Number(l.authorized??l.requested??0),pend=Math.max(0,auth-del);return `<tr><td>${esc(l.items.name)}</td><td>${esc(l.items.unit)}</td><td>${l.added_by_pharmacy?'No solicitado':l.requested}</td><td>${auth}</td><td><b>${del}</b></td><td>${pend}</td></tr>`}).join("")}</tbody></table></div><h3>Detalle de entregas</h3><div class="table-wrap"><table><thead><tr><th>Fecha/hora</th><th>Recibido por</th><th>Detalle</th></tr></thead><tbody>${events.map(ev=>{const lines=deliveryLines.filter(dl=>dl.delivery_event_id===ev.id);return `<tr><td>${fmtDateTime(ev.delivered_at)}</td><td>${esc(ev.receiver_name)}</td><td>${lines.map(dl=>{const ol=o.order_lines.find(x=>Number(x.id)===Number(dl.order_line_id));return `${esc(ol?.items?.name||"Insumo")}: <b>${Number(dl.quantity)}</b>`}).join("<br>")}</td></tr>`}).join("")||'<tr><td colspan="3">Sin entregas registradas.</td></tr>'}</tbody></table></div><div class="footer no-print"><button onclick="window.print()">Imprimir guía</button></div></div>`;
   document.getElementById("backOrder").onclick=()=>openOrder(o.id);
 }
 function monthName(m){return ["","Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"][Number(m)]||m;}
@@ -378,7 +405,7 @@ function renderReviewDetail(){
 }
 function renderHistory(){
   const rows=[];
-  orders.filter(o=>o.status==="Cerrado"||o.status==="Entrega parcial").forEach(o=>(o.order_lines||[]).forEach(l=>{const delivered=deliveredForLine(l.id),auth=Number(l.authorized??l.requested??0),pending=Math.max(0,auth-delivered);const evs=deliveryEvents.filter(e=>e.order_id===o.id).sort((a,b)=>new Date(b.delivered_at)-new Date(a.delivered_at));const last=evs[0];rows.push(`<tr><td>${esc(o.periods.label)}</td><td>${esc(o.services.name)}</td><td>${esc(l.items.name)}</td><td>${esc(l.items.unit)}</td><td>${l.current_stock}</td><td>${l.requested}</td><td>${auth}</td><td><b>${delivered}</b></td><td>${pending?`<span class="tag warnTag">${pending}</span>`:'0'}</td><td>${last?`${esc(last.receiver_name)} · ${fmtDateTime(last.delivered_at)}`:'—'}</td></tr>`)}));
+  orders.filter(o=>o.status==="Cerrado"||o.status==="Entrega parcial").forEach(o=>(o.order_lines||[]).forEach(l=>{const delivered=deliveredForLine(l.id),auth=Number(l.authorized??l.requested??0),pending=Math.max(0,auth-delivered);const evs=deliveryEvents.filter(e=>e.order_id===o.id).sort((a,b)=>new Date(b.delivered_at)-new Date(a.delivered_at));const last=evs[0];rows.push(`<tr><td>${esc(o.periods.label)}</td><td>${esc(o.services.name)}</td><td>${esc(l.items.name)}</td><td>${esc(l.items.unit)}</td><td>${l.current_stock}</td><td>${l.added_by_pharmacy?'No solicitado':l.requested}</td><td>${auth}</td><td><b>${delivered}</b></td><td>${pending?`<span class="tag warnTag">${pending}</span>`:'0'}</td><td>${last?`${esc(last.receiver_name)} · ${fmtDateTime(last.delivered_at)}`:'—'}</td></tr>`)}));
   document.getElementById("historyBody").innerHTML=rows.join("")||'<tr><td colspan="10" class="small">Sin entregas registradas.</td></tr>';
 }
 function periodIndex(year,month){return Number(year)*12+(Number(month)-1);}
@@ -497,12 +524,12 @@ function renderConsumption(){
 }
 
 function renderItemCatalog(){
-  const body=document.getElementById("itemCatalogBody"),search=document.getElementById("itemCatalogSearch");
+  const body=document.getElementById("itemCatalogBody"),search=document.getElementById("itemCatalogSearch"),showInactive=document.getElementById("showInactiveItems");
   if(!body||!search)return;
-  const q=search.value.trim().toLowerCase();
-  const rows=items.filter(i=>!q||String(i.name||"").toLowerCase().includes(q));
-  body.innerHTML=rows.map(i=>`<tr data-item="${i.id}"><td><b>${esc(i.name)}</b></td><td>${esc(i.unit||"—")}</td><td><div style="display:flex;gap:8px;align-items:center"><input class="catalogUnit" list="unitSuggestions" value="${esc(i.unit||"")}" style="min-width:170px"><button class="secondary saveItemUnit">Guardar</button></div></td></tr>`).join("");
-  if(!rows.length)body.innerHTML='<tr><td colspan="3" class="small">No hay insumos que coincidan con la búsqueda.</td></tr>';
+  const q=search.value.trim().toLowerCase(),includeInactive=!!showInactive?.checked;
+  const rows=items.filter(i=>(includeInactive||i.active!==false)&&(!q||String(i.name||"").toLowerCase().includes(q)));
+  body.innerHTML=rows.map(i=>`<tr data-item="${i.id}"><td><b>${esc(i.name)}</b></td><td>${esc(i.unit||"—")}</td><td><div style="display:flex;gap:8px;align-items:center"><input class="catalogUnit" list="unitSuggestions" value="${esc(i.unit||"")}" style="min-width:170px" ${i.active===false?'disabled':''}><button class="secondary saveItemUnit" ${i.active===false?'disabled':''}>Guardar</button></div></td><td>${i.active===false?'<span class="tag muted">Eliminado / inactivo</span>':'<span class="tag ok">Activo</span>'}</td><td>${i.active===false?'<button class="secondary reactivateItem">Reactivar</button>':'<button class="dangerBtn deactivateItem">Eliminar</button>'}</td></tr>`).join("");
+  if(!rows.length)body.innerHTML='<tr><td colspan="5" class="small">No hay insumos que coincidan con la búsqueda.</td></tr>';
   body.querySelectorAll(".saveItemUnit").forEach(btn=>btn.onclick=async()=>{
     const tr=btn.closest("tr[data-item]"),id=Number(tr.dataset.item),unit=tr.querySelector(".catalogUnit").value.trim();
     if(!unit){alert("Debe indicar una unidad.");return;}
@@ -515,14 +542,33 @@ function renderItemCatalog(){
     document.getElementById("itemCatalogMsg").innerHTML='<div class="status">Unidad actualizada correctamente.</div>';
     await loadAll();
   });
+  body.querySelectorAll(".deactivateItem").forEach(btn=>btn.onclick=async()=>{
+    const tr=btn.closest("tr[data-item]"),id=Number(tr.dataset.item),current=items.find(i=>Number(i.id)===id);
+    if(!confirm(`¿Eliminar "${current?.name||'este insumo'}" del catálogo activo?\n\nNo se borrará su historial ni los pedidos anteriores. También dejará de estar autorizado para todos los servicios.`))return;
+    btn.disabled=true;
+    const {error}=await sb.rpc("pharmacy_set_item_active",{p_item_id:id,p_active:false});
+    if(error){btn.disabled=false;document.getElementById("itemCatalogMsg").innerHTML=`<div class="alert danger">${esc(error.message)}</div>`;return;}
+    document.getElementById("itemCatalogMsg").innerHTML='<div class="status">Insumo eliminado del catálogo activo. El historial se conserva.</div>';
+    await loadAll();
+  });
+  body.querySelectorAll(".reactivateItem").forEach(btn=>btn.onclick=async()=>{
+    const tr=btn.closest("tr[data-item]"),id=Number(tr.dataset.item);
+    btn.disabled=true;
+    const {error}=await sb.rpc("pharmacy_set_item_active",{p_item_id:id,p_active:true});
+    if(error){btn.disabled=false;document.getElementById("itemCatalogMsg").innerHTML=`<div class="alert danger">${esc(error.message)}</div>`;return;}
+    document.getElementById("itemCatalogMsg").innerHTML='<div class="status">Insumo reactivado. Debe volver a autorizarlo en los servicios que correspondan.</div>';
+    await loadAll();
+  });
   search.oninput=renderItemCatalog;
+  if(showInactive)showInactive.onchange=renderItemCatalog;
 }
 async function createCatalogItem(){
   const name=document.getElementById("newItemName").value.trim(),unit=document.getElementById("newItemUnit").value.trim();
   const msg=document.getElementById("newItemMsg"),btn=document.getElementById("createItem");
   if(name.length<2){msg.innerHTML='<div class="alert danger">Ingrese el nombre del insumo.</div>';return;}
   if(!unit){msg.innerHTML='<div class="alert danger">Ingrese la unidad del insumo.</div>';return;}
-  if(items.some(i=>String(i.name||"").trim().toLowerCase()===name.toLowerCase())){msg.innerHTML='<div class="alert warn">Ese insumo ya existe en el catálogo.</div>';return;}
+  const duplicate=items.find(i=>String(i.name||"").trim().toLowerCase()===name.toLowerCase());
+  if(duplicate){msg.innerHTML=duplicate.active===false?'<div class="alert warn">Ese insumo existe pero está eliminado/inactivo. Use “Mostrar eliminados/inactivos” y luego “Reactivar”.</div>':'<div class="alert warn">Ese insumo ya existe en el catálogo.</div>';return;}
   btn.disabled=true;
   const {error}=await sb.from("items").insert({name,unit,active:true});
   btn.disabled=false;
@@ -545,7 +591,7 @@ function renderPermissions(){
   if(previous&&[...sel.options].some(o=>o.value===previous))sel.value=previous;
   if(!sel.value&&sel.options.length)sel.selectedIndex=0;
   const sid=Number(sel.value||0),q=search.value.trim().toLowerCase(),current=permissionMapForService(sid);
-  const rows=items.filter(i=>!q||String(i.name||"").toLowerCase().includes(q));
+  const rows=items.filter(i=>i.active!==false&&(!q||String(i.name||"").toLowerCase().includes(q)));
   body.innerHTML=rows.map(i=>`<tr data-item="${i.id}"><td><input class="permToggle" type="checkbox" ${current[String(i.id)]?"checked":""}></td><td><b>${esc(i.name)}</b></td><td>${esc(i.unit||"—")}</td></tr>`).join("");
   document.getElementById("permMsg").innerHTML=`<div class="small">${Object.values(current).filter(Boolean).length} insumo(s) autorizados actualmente para este servicio.</div>`;
   sel.onchange=renderPermissions;
