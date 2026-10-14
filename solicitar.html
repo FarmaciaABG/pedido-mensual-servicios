@@ -1,108 +1,214 @@
-<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Solicitar pedido</title><style>:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#dfe5ee;--brand:#1f5b8f;--brand2:#0f416d;--soft:#eaf3fb;--warn:#fff5cc;--warnb:#d6a600;--danger:#fde8e8;--dangerb:#d64545;--ok:#e8f7ec;--okb:#2f8f4e}
-*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
-header{background:linear-gradient(135deg,var(--brand2),var(--brand));color:#fff;padding:18px 26px}header h1{margin:0;font-size:22px}header p{margin:4px 0 0;opacity:.9;font-size:13px}
-.shell{max-width:1450px;margin:auto;padding:24px}.card,.meta,.metric{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 2px 10px rgba(24,39,75,.05)}.card{padding:18px;margin-bottom:18px}
-.topbar{display:grid;grid-template-columns:repeat(4,minmax(180px,1fr));gap:12px;margin-bottom:18px}.meta,.metric{padding:14px 16px}.meta b,.metric b{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:5px}.meta span{font-weight:700}.metric strong{font-size:24px}
-input,select,textarea,button{font:inherit}input,select,textarea{border:1px solid #cfd7e3;border-radius:9px;padding:9px 10px;background:white;color:var(--text)}input[type=number]{width:105px}textarea{width:100%;min-height:74px}
-button,.btn{border:0;border-radius:9px;padding:10px 14px;cursor:pointer;font-weight:700;background:var(--brand);color:#fff;text-decoration:none;display:inline-block}.secondary{background:#eef2f7;color:#23324b}.ghost{background:#fff;border:1px solid var(--line);color:#23324b}
-table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}th{position:sticky;top:0;background:#edf3f8;color:#334155;text-align:left;padding:10px;border-bottom:1px solid var(--line);z-index:1}td{padding:9px 10px;border-bottom:1px solid #edf0f4;vertical-align:top}tbody tr:hover{background:#fafcff}.table-wrap{max-height:540px;overflow:auto;border:1px solid var(--line);border-radius:12px}
-.small{font-size:12px;color:var(--muted)}.tag{display:inline-flex;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700}.ok{background:var(--ok);color:#246d3a}.warnTag{background:var(--warn);color:#7a5a00}.muted{background:#eef2f7;color:#586275}.sent{background:#e8f2fb;color:#225f8e}.review{background:#fff3d1;color:#7c5c00}.closed{background:#e7f6ec;color:#277242}
-.alert{margin-top:7px;padding:8px 10px;border-radius:8px;font-size:12px}.alert.warn{background:var(--warn);border-left:4px solid var(--warnb)}.alert.info{background:var(--soft);border-left:4px solid var(--brand)}.alert.danger{background:var(--danger);border-left:4px solid var(--dangerb)}
-.filters,.toolbar,.footer{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.pill{padding:7px 11px;border-radius:999px;background:#eef2f7;color:#314158;font-size:12px;font-weight:700;cursor:pointer}.pill.active{background:var(--brand);color:#fff}.footer{justify-content:flex-end;margin-top:16px}
-.hidden{display:none!important}.grid4{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));gap:10px}.box{border:1px solid var(--line);border-radius:10px;padding:11px;background:#fafcff}.box b{display:block;font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:4px}
-.login{max-width:500px;margin:48px auto}.status{padding:10px 12px;border-radius:10px;margin:10px 0;background:var(--ok)}.late{background:var(--warn)}
-@media(max-width:900px){.topbar,.grid4{grid-template-columns:1fr 1fr}.table-wrap{max-height:none}}@media(max-width:600px){.topbar,.grid4{grid-template-columns:1fr}}
-@media print{header,.no-print{display:none!important}.shell{padding:0}.card{box-shadow:none;border:0}}
-.service-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.service-btn{background:white;color:#23324b;border:1px solid var(--line);padding:14px;text-align:left}.service-btn:hover{border-color:var(--brand);background:#f7fbff}@media(max-width:700px){.service-grid{grid-template-columns:1fr}}
-</style></head><body>
-<header><div style="display:flex;justify-content:space-between;align-items:center"><div><h1>Solicitar pedido</h1><p>Pedido mensual de servicios</p></div><a class="btn secondary" href="index.html">Volver</a></div></header>
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Solicitar pedido</title>
+<style>
+:root{
+  --bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#dfe5ee;
+  --brand:#1f5b8f;--brand2:#0f416d;--soft:#eaf3fb;--ok:#e8f7ec;
+  --warn:#fff4d6;--warnb:#d7a51b;--danger:#fde8e8;--dangerb:#d64545
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{background:linear-gradient(135deg,var(--brand2),var(--brand));color:white;padding:22px 28px}
+header h1{margin:0;font-size:24px}header p{margin:5px 0 0;font-size:13px;opacity:.9}
+.shell{max-width:980px;margin:auto;padding:28px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:0 2px 12px rgba(24,39,75,.06)}
+h2{margin-top:0}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+label{display:block;font-size:12px;color:var(--muted);font-weight:700;margin:0 0 6px}
+input,select,button{font:inherit}
+input,select{width:100%;padding:11px 12px;border:1px solid #cfd7e3;border-radius:10px;background:white}
+button,.btn{border:0;border-radius:10px;padding:11px 16px;background:var(--brand);color:white;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block}
+.secondary{background:#eef2f7;color:#25344f}
+.alert{padding:14px 16px;border-radius:12px;margin-top:16px;font-size:14px}
+.alert.info{background:var(--soft);border-left:4px solid var(--brand)}
+.alert.warn{background:var(--warn);border-left:4px solid var(--warnb)}
+.alert.danger{background:var(--danger);border-left:4px solid var(--dangerb)}
+.alert.ok{background:var(--ok)}
+.actions{display:flex;justify-content:flex-end;gap:10px;flex-wrap:wrap;margin-top:18px}
+.small{font-size:12px;color:var(--muted)}
+.hidden{display:none!important}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.shell{padding:16px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Pedido mensual de servicios</h1>
+  <p>Solicitud de insumos a Farmacia</p>
+</header>
+
 <div class="shell">
-<section id="loading" class="card" style="max-width:700px;margin:24px auto">Cargando servicios...</section>
-<section id="stepService" class="card hidden" style="max-width:900px;margin:24px auto"><h2>Seleccione el servicio</h2><p class="small">Seleccione desde qué servicio realizará el pedido.</p><div id="serviceGrid" class="service-grid" style="margin-top:14px"></div></section>
-<section id="stepName" class="card hidden" style="max-width:620px;margin:24px auto"><h2 id="selectedServiceTitle"></h2><p class="small">Ingrese el nombre de quien está realizando este pedido.</p><label>Nombre y apellido</label><input id="requesterName" type="text" placeholder="Ej.: María Pérez" style="width:100%;margin:6px 0 14px"><div id="nameMsg"></div><div class="footer"><button class="secondary" id="backService">Volver</button><button id="continueBtn">Continuar</button></div></section>
-<section id="alreadySent" class="card hidden" style="max-width:700px;margin:24px auto"><h2>Pedido ya enviado</h2><div class="alert info" id="sentInfo"></div><div class="footer"><a class="btn secondary" href="index.html">Volver al inicio</a></div></section>
+  <div class="card">
+    <h2>Solicitar pedido</h2>
+    <p class="small">Seleccione su servicio e identifique a la persona que realiza la solicitud.</p>
+
+    <div class="grid">
+      <div>
+        <label for="service">Servicio</label>
+        <select id="service">
+          <option value="">Seleccione un servicio…</option>
+        </select>
+      </div>
+      <div>
+        <label for="period">Periodo</label>
+        <select id="period"></select>
+      </div>
+      <div style="grid-column:1/-1">
+        <label for="name">Nombre de quien realiza el pedido</label>
+        <input id="name" autocomplete="name" placeholder="Nombre y apellido">
+      </div>
+    </div>
+
+    <div id="message"></div>
+
+    <div class="actions">
+      <a class="btn secondary" href="index.html">Volver</a>
+      <button id="continueBtn">Continuar</button>
+    </div>
+  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL = "https://qomszvnpuhtlnrykcyxb.supabase.co";
-const SUPABASE_KEY = "sb_publishable_zhMUi-mweEAwW1Wpr4N6Dw_PGv8QNTN";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_URL="https://qomszvnpuhtlnrykcyxb.supabase.co";
+const SUPABASE_KEY="sb_publishable_zhMUi-mweEAwW1Wpr4N6Dw_PGv8QNTN";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
-function esc(s){
-  return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
-}
-function fmtDateTime(s){
-  if(!s) return "—";
-  return new Date(s).toLocaleString("es-CL");
-}
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
 function todayISO(){
   const d=new Date();
   return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 }
-</script>
 
-<script>
-let selectedService=null, selectedPeriod=null;
+let services=[], periods=[];
 
-async function getCurrentPeriod(){
-  const {data,error} = await sb.from("periods").select("*").eq("active",true).order("year").order("month");
-  if(error) throw error;
+function getCurrentPeriod(){
+  const active=periods.filter(p=>p.active!==false).slice().sort((a,b)=>(a.year-b.year)||(a.month-b.month));
+  if(!active.length) return null;
   const today=todayISO();
-  return data.find(p=>today<=p.close_date) || data[data.length-1];
+  const opened=active.filter(p=>p.open_date<=today);
+  return opened.length ? opened[opened.length-1] : active[0];
 }
 
 async function init(){
-  try{
-    const [svcRes, period] = await Promise.all([
-      sb.from("services").select("id,name").eq("active",true).order("name"),
-      getCurrentPeriod()
-    ]);
-    if(svcRes.error) throw svcRes.error;
-    selectedPeriod=period;
-    document.getElementById("loading").classList.add("hidden");
-    document.getElementById("stepService").classList.remove("hidden");
-    const grid=document.getElementById("serviceGrid");
-    svcRes.data.forEach(s=>{
-      const b=document.createElement("button");
-      b.className="service-btn"; b.textContent=s.name;
-      b.onclick=()=>chooseService(s);
-      grid.appendChild(b);
-    });
-  }catch(e){
-    document.getElementById("loading").innerHTML='<div class="alert danger">No fue posible cargar el sistema: '+esc(e.message)+'</div>';
-  }
-}
+  const [sRes,pRes]=await Promise.all([
+    sb.from("services").select("id,name,active").eq("active",true).order("name"),
+    sb.from("periods").select("*").eq("active",true).order("year").order("month")
+  ]);
 
-async function chooseService(service){
-  selectedService=service;
-  const {data,error} = await sb.rpc("get_order_status",{p_service_id:service.id,p_period_id:selectedPeriod.id});
-  if(error){ alert(error.message); return; }
-  if(data && data.length){
-    const o=data[0];
-    document.getElementById("stepService").classList.add("hidden");
-    document.getElementById("alreadySent").classList.remove("hidden");
-    document.getElementById("sentInfo").innerHTML=`El pedido de <b>${esc(service.name)}</b> correspondiente a <b>${esc(selectedPeriod.label)}</b> ya fue enviado.<br><br>Realizado por: <b>${esc(o.requester_name||"—")}</b><br>Fecha/hora: <b>${fmtDateTime(o.submitted_at)}</b><br>Estado: <b>${esc(o.status)}</b>`;
+  if(sRes.error || pRes.error){
+    document.getElementById("message").innerHTML='<div class="alert danger">No fue posible cargar la configuración del sistema.</div>';
+    document.getElementById("continueBtn").disabled=true;
     return;
   }
-  document.getElementById("stepService").classList.add("hidden");
-  document.getElementById("stepName").classList.remove("hidden");
-  document.getElementById("selectedServiceTitle").textContent=service.name;
+
+  services=sRes.data||[];
+  periods=pRes.data||[];
+
+  document.getElementById("service").innerHTML=
+    '<option value="">Seleccione un servicio…</option>'+
+    services.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("");
+
+  document.getElementById("period").innerHTML=
+    periods.map(p=>`<option value="${p.id}">${esc(p.label)}</option>`).join("");
+
+  const current=getCurrentPeriod();
+  if(current) document.getElementById("period").value=String(current.id);
 }
 
-document.getElementById("backService").onclick=()=>{
-  document.getElementById("stepName").classList.add("hidden");
-  document.getElementById("stepService").classList.remove("hidden");
-  document.getElementById("requesterName").value="";
-  selectedService=null;
-};
-document.getElementById("continueBtn").onclick=()=>{
-  const name=document.getElementById("requesterName").value.trim();
-  if(!name){
-    document.getElementById("nameMsg").innerHTML='<div class="alert danger">Ingrese el nombre de quien realiza el pedido.</div>'; return;
+async function continueFlow(){
+  const serviceId=Number(document.getElementById("service").value||0);
+  const periodId=Number(document.getElementById("period").value||0);
+  const name=document.getElementById("name").value.trim();
+  const message=document.getElementById("message");
+  const btn=document.getElementById("continueBtn");
+
+  message.innerHTML="";
+
+  if(!serviceId || !periodId || name.length<2){
+    message.innerHTML='<div class="alert danger">Seleccione el servicio, el periodo e ingrese el nombre de quien realiza el pedido.</div>';
+    return;
   }
-  sessionStorage.setItem("pedido_request_context",JSON.stringify({service:selectedService,period:selectedPeriod,name}));
-  location.href="pedido.html";
-};
+
+  const service=services.find(s=>Number(s.id)===serviceId);
+  const period=periods.find(p=>Number(p.id)===periodId);
+  if(!service || !period) return;
+
+  btn.disabled=true;
+
+  const {data,error}=await sb.rpc("get_order_status",{
+    p_service_id:serviceId,
+    p_period_id:periodId
+  });
+
+  btn.disabled=false;
+
+  if(error){
+    message.innerHTML='<div class="alert danger">No fue posible verificar si el servicio ya tiene un pedido: '+esc(error.message)+'</div>';
+    return;
+  }
+
+  const ctx={service,period,name};
+  const existing=(data||[])[0]||null;
+
+  if(!existing){
+    sessionStorage.setItem("pedido_request_context",JSON.stringify(ctx));
+    location.href="pedido.html";
+    return;
+  }
+
+  if(existing.status==="Enviado"){
+    sessionStorage.setItem("pedido_complement_context",JSON.stringify(ctx));
+    message.innerHTML=`
+      <div class="alert warn">
+        <b>Este servicio ya hizo un pedido para ${esc(period.label)}.</b><br>
+        ¿Se olvidó de solicitar algo? Mientras Farmacia no haya iniciado la revisión, puede agregar más insumos o aumentar una cantidad del mismo pedido.
+        <div class="actions" style="margin-top:12px;justify-content:flex-start">
+          <button id="yesComplement">Sí, agregar más cosas</button>
+          <button class="secondary" id="noComplement">No, volver</button>
+        </div>
+      </div>`;
+    document.getElementById("yesComplement").onclick=()=>location.href="complementar.html";
+    document.getElementById("noComplement").onclick=()=>{message.innerHTML="";};
+    return;
+  }
+
+  if(existing.status==="En revisión"){
+    message.innerHTML=`
+      <div class="alert info">
+        <b>Este servicio ya hizo su pedido para ${esc(period.label)} y Farmacia ya inició la revisión.</b><br>
+        Ya no es posible agregar productos desde el servicio. Si faltó algo, comuníquese con Farmacia.
+      </div>`;
+    return;
+  }
+
+  if(existing.status==="Entrega parcial"){
+    message.innerHTML=`
+      <div class="alert info">
+        <b>Este pedido ya tiene una entrega parcial registrada.</b><br>
+        No puede ser complementado desde el servicio.
+      </div>`;
+    return;
+  }
+
+  if(existing.status==="Cerrado"){
+    message.innerHTML=`
+      <div class="alert ok">
+        <b>El pedido de ${esc(period.label)} ya se encuentra cerrado.</b><br>
+        Si necesita solicitar algo adicional, comuníquese con Farmacia.
+      </div>`;
+    return;
+  }
+
+  message.innerHTML=`<div class="alert info">Este servicio ya tiene un pedido registrado con estado <b>${esc(existing.status)}</b>.</div>`;
+}
+
+document.getElementById("continueBtn").onclick=continueFlow;
+document.getElementById("name").addEventListener("keydown",e=>{if(e.key==="Enter")continueFlow();});
 init();
-</script></body></html>
+</script>
+</body>
+</html>
