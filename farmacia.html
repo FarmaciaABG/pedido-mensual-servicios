@@ -246,7 +246,8 @@ async function openOrder(id){
   const o=activeOrder, sent=o.status==="Enviado", closed=o.status==="Cerrado";
   const deliveryHistory=deliveryEvents.filter(e=>e.order_id===o.id).sort((a,b)=>new Date(a.delivered_at)-new Date(b.delivered_at));
   document.getElementById("detail").innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start"><div><h2>Pedido — ${esc(o.services.name)}</h2><div class="small">${esc(o.periods.label)} · ${esc(o.status)}</div></div><button class="secondary" id="backDash">← Volver</button></div>
-  ${sent?'<div class="alert info"><b>Pedido recibido, aún no en revisión.</b> Abrir este pedido no bloquea al servicio. Mientras permanezca en estado Enviado, el servicio todavía puede complementarlo. Cuando vaya a comenzar a autorizar cantidades, presione <b>Iniciar revisión</b>.</div>':'<div class="alert info"><b>Entregas parciales:</b> "Autorizado total" corresponde a lo que Farmacia compromete para este pedido. Registre en "Entregar ahora" solo lo que efectivamente se entrega en esta ocasión. El saldo queda disponible para una entrega posterior.</div>'}
+  ${sent?'<div class="alert info"><b>Pedido recibido, aún no en revisión.</b> Abrir este pedido no bloquea al servicio. Mientras permanezca en estado Enviado, el servicio todavía puede complementarlo. Cuando vaya a comenzar a autorizar cantidades, cambie el estado a <b>En revisión</b>.</div>':'<div class="alert info"><b>Entregas parciales:</b> "Autorizado total" corresponde a lo que Farmacia compromete para este pedido. Registre en "Entregar ahora" solo lo que efectivamente se entrega en esta ocasión. El saldo queda disponible para una entrega posterior.</div>'}
+  ${(o.status==="Enviado"||o.status==="En revisión")?`<div class="box" style="margin-top:14px"><b>Estado de revisión</b><div class="small" style="margin:6px 0 10px">Puede cambiar entre <b>Enviado</b> y <b>En revisión</b>. Volver a <b>Enviado</b> vuelve a permitir que el servicio complemente el pedido.</div><div class="filters"><select id="reviewStatusSelect" style="min-width:190px"><option value="Enviado" ${o.status==="Enviado"?'selected':''}>Enviado</option><option value="En revisión" ${o.status==="En revisión"?'selected':''}>En revisión</option></select><button class="secondary" id="saveReviewStatusBtn">Guardar estado</button></div></div>`:''}
   ${(!closed&&!sent)?`<div class="box" style="margin-top:14px"><b>Agregar insumo desde Farmacia</b><div class="small" style="margin-bottom:8px">Use esta opción si, durante la revisión, Farmacia decide incorporar un insumo que el servicio no había solicitado. No aumenta el total solicitado por los servicios en el consolidado.</div><div class="filters"><select id="phAddItem" style="min-width:360px"><option value="">Seleccione un insumo…</option>${items.filter(it=>it.active!==false&&!(o.order_lines||[]).some(l=>Number(l.item_id)===Number(it.id))).map(it=>`<option value="${it.id}">${esc(it.name)} · ${esc(it.unit)}</option>`).join("")}</select><input id="phAddQty" type="number" min="0.01" step="any" placeholder="Cantidad autorizada"><button id="phAddBtn">Agregar al pedido</button></div></div>`:''}
   <div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Stock actual</th><th>Solicitado</th><th>Autorizado total</th><th>Entregado acumulado</th><th>Saldo pendiente</th>${(!closed&&!sent)?'<th>Entregar ahora</th>':''}</tr></thead><tbody>${o.order_lines.map(l=>{const del=deliveredForLine(l.id),auth=Number(l.authorized??l.requested??0),pend=Math.max(0,auth-del);const pharmacyAdded=!!l.added_by_pharmacy;return `<tr data-id="${l.id}" data-delivered="${del}" data-requested="${l.requested}"><td>${esc(l.items.name)}${pharmacyAdded?' <span class="tag sent">Agregado por Farmacia</span>':''}</td><td>${esc(l.items.unit)}</td><td>${l.current_stock===null||l.current_stock===undefined?'<span class="small">No informado</span>':l.current_stock}</td><td>${pharmacyAdded?'<span class="small">No solicitado</span>':l.requested}</td><td>${(closed||sent)?`<b>${auth}</b>`:`<input class="auth" type="number" min="0" value="${auth}">`}</td><td><b>${del}</b></td><td class="pendingCell">${pend?`<span class="tag warnTag">${pend}</span>`:'<span class="tag ok">0</span>'}</td>${(!closed&&!sent)?`<td><input class="deliverNow" type="number" min="0" value="0"></td>`:''}</tr>`}).join("")}</tbody></table></div>
   <br><label>Observación Farmacia</label><textarea id="obs" ${(closed||sent)?'disabled':''}>${esc(o.pharmacy_observation||"")}</textarea>
@@ -257,12 +258,36 @@ async function openOrder(id){
   document.getElementById("deleteOrderBtn").onclick=deleteActiveOrder;
   const guideBtn=document.getElementById("guideBtn"); if(guideBtn) guideBtn.onclick=showGuide;
   const startBtn=document.getElementById("startReviewBtn"); if(startBtn) startBtn.onclick=startReview;
+  const reviewStatusBtn=document.getElementById("saveReviewStatusBtn"); if(reviewStatusBtn) reviewStatusBtn.onclick=saveReviewStatus;
   if(!closed&&!sent){
     const saveBtn=document.getElementById("saveAuthBtn"); if(saveBtn) saveBtn.onclick=saveAuthorization;
     const deliverBtn=document.getElementById("deliverBtn"); if(deliverBtn) deliverBtn.onclick=registerDelivery;
     const addBtn=document.getElementById("phAddBtn"); if(addBtn) addBtn.onclick=addPharmacyItem;
     document.querySelectorAll("#detail .auth").forEach(inp=>inp.oninput=refreshPendingPreview);
     document.querySelectorAll("#detail .deliverNow").forEach(inp=>inp.oninput=refreshPendingPreview);
+  }
+}
+async function saveReviewStatus(){
+  if(!activeOrder)return;
+  const newStatus=document.getElementById("reviewStatusSelect")?.value;
+  if(!newStatus||newStatus===activeOrder.status){
+    document.getElementById("detailMsg").innerHTML='<div class="status">El pedido ya se encuentra en ese estado.</div>';
+    return;
+  }
+  if(newStatus==="Enviado"){
+    const ok=confirm('¿Volver el pedido a Enviado?\n\nEl servicio podrá volver a complementarlo mientras permanezca en este estado.');
+    if(!ok)return;
+  }
+  const btn=document.getElementById("saveReviewStatusBtn"); if(btn)btn.disabled=true;
+  try{
+    const {error}=await sb.rpc("pharmacy_set_review_status",{p_order_id:activeOrder.id,p_status:newStatus});
+    if(error)throw error;
+    const id=activeOrder.id;
+    await loadAll();
+    openOrder(id);
+  }catch(e){
+    if(btn)btn.disabled=false;
+    document.getElementById("detailMsg").innerHTML=`<div class="alert danger">No fue posible cambiar el estado: ${esc(e.message)}</div>`;
   }
 }
 async function startReview(){
