@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Complementar pedido</title>
+<style>
+:root{--bg:#f5f7fb;--card:#fff;--text:#172033;--muted:#6b7280;--line:#dfe5ee;--brand:#1f5b8f;--brand2:#0f416d;--soft:#eaf3fb;--warn:#fff5cc;--warnb:#d6a600;--danger:#fde8e8;--dangerb:#d64545;--ok:#e8f7ec}
+*{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
+header{background:linear-gradient(135deg,var(--brand2),var(--brand));color:white;padding:18px 26px}header h1{margin:0;font-size:22px}header p{margin:4px 0 0;font-size:13px;opacity:.9}
+.shell{max-width:1250px;margin:auto;padding:24px}.card{background:white;border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:18px;box-shadow:0 2px 10px rgba(24,39,75,.05)}
+.grid{display:grid;grid-template-columns:2fr 1fr 2fr auto;gap:10px;align-items:end}label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}input,select,button{font:inherit}input,select{width:100%;border:1px solid #cfd7e3;border-radius:9px;padding:9px 10px;background:white}
+button,.btn{border:0;border-radius:9px;padding:10px 14px;background:var(--brand);color:white;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block}.secondary{background:#eef2f7;color:#23324b}
+.alert{padding:10px 12px;border-radius:10px;margin:10px 0;font-size:13px}.info{background:var(--soft);border-left:4px solid var(--brand)}.warn{background:var(--warn);border-left:4px solid var(--warnb)}.danger{background:var(--danger);border-left:4px solid var(--dangerb)}.status{background:var(--ok)}
+.small{font-size:12px;color:var(--muted)}table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}th{background:#edf3f8;text-align:left;padding:10px;border-bottom:1px solid var(--line)}td{padding:9px 10px;border-bottom:1px solid #edf0f4;vertical-align:top}.table-wrap{border:1px solid var(--line);border-radius:12px;overflow:auto;max-height:600px}
+input[type=number]{width:110px}.hidden{display:none!important}.footer{display:flex;gap:10px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap}.tag{display:inline-flex;border-radius:999px;padding:4px 8px;font-size:11px;font-weight:700;background:#eef2f7}
+@media(max-width:800px){.grid{grid-template-columns:1fr}.table-wrap{max-height:none}}
+</style>
+</head>
+<body>
+<header><h1>Complementar pedido</h1><p>Agregue lo que faltó al pedido ya enviado, siempre que Farmacia aún no haya iniciado su revisión.</p></header>
+<div class="shell">
+<div class="card">
+  <div class="grid">
+    <div><label>Servicio</label><select id="service"><option value="">Seleccione…</option></select></div>
+    <div><label>Periodo</label><select id="period"></select></div>
+    <div><label>Nombre de quien complementa</label><input id="actor" placeholder="Nombre completo"></div>
+    <div><button id="load">Buscar pedido</button></div>
+  </div>
+  <div id="msg"></div>
+</div>
+<div id="orderCard" class="card hidden">
+  <h2 id="title">Pedido</h2>
+  <div id="orderInfo" class="alert info"></div>
+  <p class="small">Ingrese únicamente cantidades adicionales. Si el insumo ya estaba en el pedido, se sumará a lo solicitado originalmente. Para un insumo nuevo debe informar su stock actual.</p>
+  <div class="table-wrap"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Solicitado actualmente</th><th>Stock actual si es nuevo</th><th>Agregar</th></tr></thead><tbody id="body"></tbody></table></div>
+  <div class="footer"><a class="btn secondary" href="solicitar.html">Cancelar</a><button id="send">Agregar al pedido</button></div>
+  <div id="result"></div>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL="https://qomszvnpuhtlnrykcyxb.supabase.co";
+const SUPABASE_KEY="sb_publishable_zhMUi-mweEAwW1Wpr4N6Dw_PGv8QNTN";
+const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[m]));
+const todayISO=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
+let services=[],periods=[],catalog=[],existing=new Map(),currentOrder=null;
+function dashboardPeriod(){const ps=periods.filter(p=>p.active!==false).slice().sort((a,b)=>(a.year-b.year)||(a.month-b.month));const today=todayISO(),opened=ps.filter(p=>!p.open_date||p.open_date<=today);return opened.length?opened[opened.length-1]:(ps[0]||null);}
+async function init(){
+  const [s,p]=await Promise.all([sb.from("services").select("id,name,active").eq("active",true).order("name"),sb.from("periods").select("*").eq("active",true).order("year").order("month")]);
+  if(s.error||p.error){document.getElementById("msg").innerHTML='<div class="alert danger">No fue posible cargar la configuración.</div>';return;}
+  services=s.data||[];periods=p.data||[];
+  document.getElementById("service").innerHTML='<option value="">Seleccione…</option>'+services.map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
+  document.getElementById("period").innerHTML=periods.map(x=>`<option value="${x.id}">${esc(x.label)}</option>`).join("");
+  const dp=dashboardPeriod();if(dp)document.getElementById("period").value=String(dp.id);
+  const saved=sessionStorage.getItem("pedido_complement_context");if(saved){try{const c=JSON.parse(saved);document.getElementById("service").value=String(c.service?.id||"");document.getElementById("period").value=String(c.period?.id||"");document.getElementById("actor").value=c.name||"";}catch(e){}}
+}
+async function loadOrder(){
+  document.getElementById("orderCard").classList.add("hidden");document.getElementById("msg").innerHTML="";
+  const serviceId=Number(document.getElementById("service").value||0),periodId=Number(document.getElementById("period").value||0),actor=document.getElementById("actor").value.trim();
+  if(!serviceId||!periodId||actor.length<2){document.getElementById("msg").innerHTML='<div class="alert danger">Seleccione servicio, periodo e ingrese su nombre.</div>';return;}
+  const [o,c]=await Promise.all([sb.rpc("get_order_for_complement",{p_service_id:serviceId,p_period_id:periodId}),sb.from("service_items").select("item_id,items(id,name,unit)").eq("service_id",serviceId).eq("enabled",true)]);
+  if(o.error||c.error){document.getElementById("msg").innerHTML=`<div class="alert danger">${esc((o.error||c.error).message)}</div>`;return;}
+  if(!(o.data||[]).length){document.getElementById("msg").innerHTML='<div class="alert warn">No existe un pedido enviado para ese servicio y periodo.</div>';return;}
+  currentOrder=o.data[0];
+  if(currentOrder.status!=="Enviado"){document.getElementById("msg").innerHTML=`<div class="alert warn"><b>El pedido ya está en ${esc(currentOrder.status)}.</b> Ya no puede ser modificado por el servicio. Si necesita agregar algo, comuníquese con Farmacia.</div>`;return;}
+  existing=new Map((o.data||[]).map(x=>[Number(x.item_id),x]));catalog=(c.data||[]).map(x=>x.items).filter(Boolean).sort((a,b)=>a.name.localeCompare(b.name,"es"));
+  const service=services.find(x=>Number(x.id)===serviceId),period=periods.find(x=>Number(x.id)===periodId);
+  document.getElementById("title").textContent=`Complementar — ${service?.name||""}`;
+  document.getElementById("orderInfo").innerHTML=`Pedido original realizado por <b>${esc(currentOrder.requester_name)}</b>. Periodo: <b>${esc(period?.label||"")}</b>. Estado: <b>Enviado</b>.`;
+  document.getElementById("body").innerHTML=catalog.map(it=>{const ex=existing.get(Number(it.id));return `<tr data-item="${it.id}" data-existing="${ex?1:0}"><td><b>${esc(it.name)}</b>${ex?' <span class="tag">Ya solicitado</span>':''}</td><td>${esc(it.unit)}</td><td>${ex?ex.requested:'—'}</td><td>${ex?'<span class="small">Se mantiene el stock informado en el pedido original</span>':'<input class="stock" type="number" min="0" step="any" placeholder="Stock actual">'}</td><td><input class="add" type="number" min="0" step="any" value="0"></td></tr>`}).join("");
+  document.getElementById("orderCard").classList.remove("hidden");
+}
+async function sendComplement(){
+  const actor=document.getElementById("actor").value.trim(),serviceId=Number(document.getElementById("service").value),periodId=Number(document.getElementById("period").value),lines=[];
+  for(const tr of document.querySelectorAll("#body tr")){const add=Number(tr.querySelector(".add")?.value||0);if(!(add>0))continue;const isExisting=tr.dataset.existing==="1",stockInput=tr.querySelector(".stock"),stock=isExisting?null:(stockInput?.value===""?null:Number(stockInput?.value));if(!isExisting&&(stock===null||stock<0)){document.getElementById("result").innerHTML='<div class="alert danger">Todo insumo nuevo debe tener stock actual informado.</div>';return;}lines.push({item_id:Number(tr.dataset.item),current_stock:stock,add_requested:add});}
+  if(!lines.length){document.getElementById("result").innerHTML='<div class="alert danger">Ingrese al menos una cantidad adicional.</div>';return;}
+  const btn=document.getElementById("send");btn.disabled=true;
+  const {error}=await sb.rpc("complement_order",{p_service_id:serviceId,p_period_id:periodId,p_actor_name:actor,p_lines:lines});
+  if(error){btn.disabled=false;document.getElementById("result").innerHTML=`<div class="alert danger">${esc(error.message)}</div>`;return;}
+  document.getElementById("result").innerHTML='<div class="alert status"><b>Complemento agregado correctamente.</b> Quedó incorporado al mismo pedido y al consolidado.</div>';setTimeout(loadOrder,500);
+}
+document.getElementById("load").onclick=loadOrder;document.getElementById("send").onclick=sendComplement;init();
+</script>
+</body></html>
