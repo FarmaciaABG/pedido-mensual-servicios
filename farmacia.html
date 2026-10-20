@@ -259,7 +259,7 @@ async function openOrder(id){
   const guideBtn=document.getElementById("guideBtn"); if(guideBtn) guideBtn.onclick=showGuide;
   const startBtn=document.getElementById("startReviewBtn"); if(startBtn) startBtn.onclick=startReview;
   const reviewStatusBtn=document.getElementById("saveReviewStatusBtn"); if(reviewStatusBtn) reviewStatusBtn.onclick=saveReviewStatus;
-  document.querySelectorAll("#detail .deleteDeliveryBtn").forEach(btn=>btn.onclick=()=>deleteDeliveryEvent(Number(btn.dataset.eventId),btn.dataset.eventTime));
+  document.querySelectorAll("#detail .deleteDeliveryBtn").forEach(btn=>btn.onclick=()=>deleteDeliveryEvent(btn.dataset.eventId,btn.dataset.eventTime));
   if(!closed&&!sent){
     const saveBtn=document.getElementById("saveAuthBtn"); if(saveBtn) saveBtn.onclick=saveAuthorization;
     const deliverBtn=document.getElementById("deliverBtn"); if(deliverBtn) deliverBtn.onclick=registerDelivery;
