@@ -253,12 +253,13 @@ async function openOrder(id){
   <br><label>Observación Farmacia</label><textarea id="obs" ${(closed||sent)?'disabled':''}>${esc(o.pharmacy_observation||"")}</textarea>
   ${(!closed&&!sent)?`<br><br><label>Nombre de quien recibe esta entrega</label><input id="receiver" style="width:320px" value="">`:''}
   <div class="footer">${closed?'<button class="secondary" id="guideBtn">Generar / ver guía de entrega</button>':sent?'<button id="startReviewBtn">Iniciar revisión</button>':'<button class="secondary" id="saveAuthBtn">Guardar autorización</button><button id="deliverBtn">Registrar entrega</button><button class="secondary" id="guideBtn">Generar / ver guía de entrega</button>'}<button class="dangerBtn" id="deleteOrderBtn">Eliminar pedido</button></div><div class="small" style="margin-top:8px">${sent?'El pedido continuará disponible para complementos del servicio hasta que presione Iniciar revisión.':'La guía puede visualizarse e imprimirse aun cuando el pedido tenga entregas parciales.'} Eliminar está disponible solo en Control Farmacia. Al confirmar se borran también las líneas y entregas asociadas, y el servicio queda habilitado para enviar un nuevo pedido del mismo periodo.</div><div id="detailMsg"></div></div>
-  <div class="card"><h3>Registro de entregas</h3><div class="table-wrap"><table><thead><tr><th>Fecha/hora</th><th>Recibido por</th><th>Detalle</th><th>Observación</th></tr></thead><tbody>${deliveryHistory.length?deliveryHistory.map(ev=>{const lines=deliveryLines.filter(dl=>dl.delivery_event_id===ev.id);const detail=lines.map(dl=>{const ol=o.order_lines.find(x=>Number(x.id)===Number(dl.order_line_id));return `${esc(ol?.items?.name||"Insumo")}: <b>${Number(dl.quantity)}</b>`}).join("<br>");return `<tr><td>${fmtDateTime(ev.delivered_at)}</td><td>${esc(ev.receiver_name)}</td><td>${detail||"—"}</td><td>${esc(ev.pharmacy_observation||"—")}</td></tr>`}).join(""):'<tr><td colspan="4" class="small">Todavía no se han registrado entregas.</td></tr>'}</tbody></table></div></div>`;
+  <div class="card"><h3>Registro de entregas</h3><div class="small" style="margin-bottom:10px">Si una entrega se registró dos veces por error, puede eliminar el registro incorrecto. El sistema recalculará automáticamente lo entregado, el saldo pendiente y el estado del pedido.</div><div class="table-wrap"><table><thead><tr><th>Fecha/hora</th><th>Recibido por</th><th>Detalle</th><th>Observación</th><th class="no-print">Acción</th></tr></thead><tbody>${deliveryHistory.length?deliveryHistory.map(ev=>{const lines=deliveryLines.filter(dl=>dl.delivery_event_id===ev.id);const detail=lines.map(dl=>{const ol=o.order_lines.find(x=>Number(x.id)===Number(dl.order_line_id));return `${esc(ol?.items?.name||"Insumo")}: <b>${Number(dl.quantity)}</b>`}).join("<br>");return `<tr><td>${fmtDateTime(ev.delivered_at)}</td><td>${esc(ev.receiver_name)}</td><td>${detail||"—"}</td><td>${esc(ev.pharmacy_observation||"—")}</td><td class="no-print"><button class="dangerBtn deleteDeliveryBtn" data-event-id="${ev.id}" data-event-time="${esc(fmtDateTime(ev.delivered_at))}">Eliminar</button></td></tr>`}).join(""):'<tr><td colspan="5" class="small">Todavía no se han registrado entregas.</td></tr>'}</tbody></table></div></div>`;
   document.getElementById("backDash").onclick=()=>{showSection("current");loadAll();};
   document.getElementById("deleteOrderBtn").onclick=deleteActiveOrder;
   const guideBtn=document.getElementById("guideBtn"); if(guideBtn) guideBtn.onclick=showGuide;
   const startBtn=document.getElementById("startReviewBtn"); if(startBtn) startBtn.onclick=startReview;
   const reviewStatusBtn=document.getElementById("saveReviewStatusBtn"); if(reviewStatusBtn) reviewStatusBtn.onclick=saveReviewStatus;
+  document.querySelectorAll("#detail .deleteDeliveryBtn").forEach(btn=>btn.onclick=()=>deleteDeliveryEvent(Number(btn.dataset.eventId),btn.dataset.eventTime));
   if(!closed&&!sent){
     const saveBtn=document.getElementById("saveAuthBtn"); if(saveBtn) saveBtn.onclick=saveAuthorization;
     const deliverBtn=document.getElementById("deliverBtn"); if(deliverBtn) deliverBtn.onclick=registerDelivery;
@@ -357,13 +358,36 @@ async function persistAuthorization(){
 async function saveAuthorization(){
   try{await persistAuthorization();document.getElementById("detailMsg").innerHTML='<div class="status">Autorización guardada.</div>';await loadAll();openOrder(activeOrder.id);}catch(e){document.getElementById("detailMsg").innerHTML=`<div class="alert danger">${esc(e.message)}</div>`;}
 }
+async function deleteDeliveryEvent(eventId,eventTime){
+  if(!activeOrder||!eventId)return;
+  const ok=confirm(`¿Eliminar la entrega registrada el ${eventTime||""}?
+
+Esta acción eliminará ese registro de entrega y recalculará automáticamente el saldo del pedido.`);
+  if(!ok)return;
+  const buttons=[...document.querySelectorAll(`.deleteDeliveryBtn[data-event-id="${eventId}"]`)];
+  buttons.forEach(b=>{b.disabled=true;b.textContent="Eliminando…";});
+  try{
+    const {error}=await sb.rpc("pharmacy_delete_delivery_event",{p_delivery_event_id:eventId});
+    if(error)throw error;
+    const orderId=activeOrder.id;
+    await loadAll();
+    openOrder(orderId);
+  }catch(e){
+    buttons.forEach(b=>{b.disabled=false;b.textContent="Eliminar";});
+    document.getElementById("detailMsg").innerHTML=`<div class="alert danger">No fue posible eliminar la entrega: ${esc(e.message)}</div>`;
+  }
+}
 async function registerDelivery(){
+  const deliverBtn=document.getElementById("deliverBtn");
+  if(deliverBtn?.disabled)return;
   const receiver=document.getElementById("receiver").value.trim();if(!receiver){document.getElementById("detailMsg").innerHTML='<div class="alert danger">Ingrese el nombre de quien recibe esta entrega.</div>';return;}
   const rows=[...document.querySelectorAll("#detail tbody tr[data-id]")];
   const lines=[];
   for(const tr of rows){const delivered=Number(tr.dataset.delivered||0),auth=Number(tr.querySelector(".auth").value||0),qty=Number(tr.querySelector(".deliverNow").value||0);if(auth<delivered){document.getElementById("detailMsg").innerHTML='<div class="alert danger">La cantidad autorizada no puede ser menor que lo ya entregado.</div>';return;}if(qty<0||qty>Math.max(0,auth-delivered)){document.getElementById("detailMsg").innerHTML='<div class="alert danger">La cantidad a entregar no puede superar el saldo pendiente autorizado.</div>';return;}if(qty>0)lines.push({order_line_id:Number(tr.dataset.id),quantity:qty});}
   if(!lines.length){document.getElementById("detailMsg").innerHTML='<div class="alert danger">Ingrese al menos una cantidad en “Entregar ahora”.</div>';return;}
   try{
+    if(deliverBtn){deliverBtn.disabled=true;deliverBtn.textContent="Registrando entrega…";}
+    document.getElementById("detailMsg").innerHTML='<div class="alert info">Guardando entrega. No vuelva a presionar el botón.</div>';
     await persistAuthorization();
     const now=new Date().toISOString();
     const {data:ev,error:evErr}=await sb.from("delivery_events").insert({order_id:activeOrder.id,receiver_name:receiver,pharmacy_observation:document.getElementById("obs").value||null,delivered_at:now}).select().single();if(evErr)throw evErr;
@@ -375,7 +399,7 @@ async function registerDelivery(){
     const update={status,receiver_name:receiver,received_at:now,pharmacy_observation:document.getElementById("obs").value||null,closed_at:status==="Cerrado"?now:null};
     const {error:oErr}=await sb.from("orders").update(update).eq("id",activeOrder.id);if(oErr)throw oErr;
     await loadAll();openOrder(activeOrder.id);
-  }catch(e){document.getElementById("detailMsg").innerHTML=`<div class="alert danger">${esc(e.message)}</div>`;}
+  }catch(e){if(deliverBtn){deliverBtn.disabled=false;deliverBtn.textContent="Registrar entrega";}document.getElementById("detailMsg").innerHTML=`<div class="alert danger">${esc(e.message)}</div>`;}
 }
 function showGuide(){
   const o=activeOrder,events=deliveryEvents.filter(e=>e.order_id===o.id).sort((a,b)=>new Date(a.delivered_at)-new Date(b.delivered_at));
