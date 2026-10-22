@@ -53,6 +53,7 @@ table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}th{pos
 </section>
 <section id="config" class="hidden">
 <div class="card"><h2>Configuración</h2><h3>Calendario</h3><p class="small">Puede modificar las fechas de apertura y cierre de cada periodo. Los cambios afectan el plazo mostrado al solicitante y la programación de avisos automáticos.</p><div class="box" style="margin-bottom:14px"><div style="display:flex;gap:10px;align-items:end;flex-wrap:wrap"><label style="min-width:150px">Crear año completo<input id="fullYear" type="number" min="2000" max="2100" step="1" style="width:100%"></label><button class="secondary" id="createFullYear">Crear año completo</button><div class="small" style="max-width:620px">Crea automáticamente los meses que falten del año seleccionado. Los periodos ya existentes no se duplican. Revise las fechas propuestas antes de utilizar cada periodo.</div></div></div><div id="periods"></div><div class="footer"><button class="secondary" id="addPeriod">+ Agregar periodo</button></div><div id="periodMsg"></div></div>
+<div class="card"><h3>Servicios / sectores</h3><p class="small">Cree un nuevo servicio o sector para que aparezca en el sistema. Luego podrá habilitarle los insumos correspondientes en la sección “Insumos autorizados por servicio”.</p><div class="box" style="margin-bottom:14px"><div style="display:grid;grid-template-columns:minmax(260px,1fr) auto;gap:12px;align-items:end"><label>Nombre del nuevo servicio o sector<input id="newServiceName" placeholder="Ej.: Sector 4" style="width:100%"></label><button id="createService">Crear servicio</button></div><div id="newServiceMsg"></div></div><div class="table-wrap"><table><thead><tr><th>Servicio / sector</th><th>Estado</th></tr></thead><tbody id="serviceCatalogBody"></tbody></table></div></div>
 <div class="card"><h3>Catálogo de insumos</h3><p class="small">Cree nuevos insumos, corrija su unidad de medida o elimínelos del catálogo activo. Al eliminar un insumo no se borran sus pedidos ni su historial: queda inactivo y deja de estar disponible para nuevas solicitudes.</p><div class="box" style="margin-bottom:14px"><div style="display:grid;grid-template-columns:minmax(260px,2fr) minmax(180px,1fr) auto;gap:12px;align-items:end"><label>Nombre del nuevo insumo<input id="newItemName" placeholder="Ej.: Venda elástica 10 cm" style="width:100%"></label><label>Unidad<input id="newItemUnit" list="unitSuggestions" placeholder="Ej.: unidades" style="width:100%"></label><button id="createItem">Crear insumo</button></div><datalist id="unitSuggestions"><option value="unidades"><option value="caja (x100)"><option value="cajas"><option value="frascos"><option value="pares"><option value="rollos"><option value="sobres"><option value="litros"><option value="ml"><option value="kits"></datalist><div id="newItemMsg"></div></div><div class="toolbar"><input id="itemCatalogSearch" placeholder="Buscar insumo" style="min-width:280px"><label class="small"><input id="showInactiveItems" type="checkbox"> Mostrar eliminados/inactivos</label></div><div class="table-wrap" style="margin-top:12px;max-height:520px"><table><thead><tr><th>Insumo</th><th>Unidad actual</th><th>Cambiar unidad</th><th>Estado</th><th>Acción</th></tr></thead><tbody id="itemCatalogBody"></tbody></table></div><div id="itemCatalogMsg"></div></div>
 <div class="card"><h3>Insumos autorizados por servicio</h3><p class="small">Define qué insumos podrá ver y solicitar cada servicio. Los cambios se aplican inmediatamente al formulario de solicitud y no modifican pedidos ya enviados.</p><div class="toolbar" style="margin-top:12px"><select id="permService" style="min-width:260px"></select><input id="permSearch" placeholder="Buscar insumo" style="min-width:260px"><button class="secondary" id="permCheckVisible">Autorizar visibles</button><button class="secondary" id="permUncheckVisible">Quitar visibles</button></div><div class="table-wrap" style="margin-top:12px;max-height:520px"><table><thead><tr><th>Autorizar</th><th>Insumo</th><th>Unidad</th></tr></thead><tbody id="permBody"></tbody></table></div><div class="footer"><button id="savePermissions">Guardar autorizaciones</button></div><div id="permMsg"></div></div>
 <div class="card"><h3>Correos automáticos</h3><div class="alert info">Los correos se preparan según el calendario. El recordatorio de cierre se enviará solo a servicios que aún no hayan enviado su pedido.</div>
@@ -101,7 +102,7 @@ async function loadAll(){
     sb.from("periods").select("*").order("year").order("month"),
     sb.from("email_config").select("*"),
     sb.from("historical_service_records").select("*").order("year").order("month"),
-    sb.from("services").select("id,name,active").eq("active",true).order("id"),
+    sb.from("services").select("id,name,active").order("id"),
     sb.from("items").select("id,name,unit,active").order("name"),
     sb.from("service_items").select("service_id,item_id,enabled"),
     sb.from("delivery_events").select("*").order("delivered_at",{ascending:true}),
@@ -387,20 +388,32 @@ async function registerDelivery(){
   if(!lines.length){document.getElementById("detailMsg").innerHTML='<div class="alert danger">Ingrese al menos una cantidad en “Entregar ahora”.</div>';return;}
   try{
     if(deliverBtn){deliverBtn.disabled=true;deliverBtn.textContent="Registrando entrega…";}
-    document.getElementById("detailMsg").innerHTML='<div class="alert info">Guardando entrega. No vuelva a presionar el botón.</div>';
+    document.getElementById("detailMsg").innerHTML='<div class="alert info">Guardando entrega. El sistema bloqueará automáticamente un registro duplicado aunque haga doble clic o recargue la página.</div>';
     await persistAuthorization();
-    const now=new Date().toISOString();
-    const {data:ev,error:evErr}=await sb.from("delivery_events").insert({order_id:activeOrder.id,receiver_name:receiver,pharmacy_observation:document.getElementById("obs").value||null,delivered_at:now}).select().single();if(evErr)throw evErr;
-    const {error:lnErr}=await sb.from("delivery_lines").insert(lines.map(x=>({...x,delivery_event_id:ev.id})));if(lnErr)throw lnErr;
-    // Recalcular saldo usando autorización mostrada y esta entrega.
-    let remaining=0;
-    for(const tr of rows){const delivered=Number(tr.dataset.delivered||0),auth=Number(tr.querySelector(".auth").value||0),qty=Number(tr.querySelector(".deliverNow").value||0);remaining+=Math.max(0,auth-delivered-qty);}
-    const status=remaining>0?"Entrega parcial":"Cerrado";
-    const update={status,receiver_name:receiver,received_at:now,pharmacy_observation:document.getElementById("obs").value||null,closed_at:status==="Cerrado"?now:null};
-    const {error:oErr}=await sb.from("orders").update(update).eq("id",activeOrder.id);if(oErr)throw oErr;
-    await loadAll();openOrder(activeOrder.id);
-  }catch(e){if(deliverBtn){deliverBtn.disabled=false;deliverBtn.textContent="Registrar entrega";}document.getElementById("detailMsg").innerHTML=`<div class="alert danger">${esc(e.message)}</div>`;}
+    const tokenKey=`pending_delivery_token_${activeOrder.id}`;
+    let deliveryToken=localStorage.getItem(tokenKey);
+    if(!deliveryToken){
+      deliveryToken=crypto.randomUUID();
+      localStorage.setItem(tokenKey,deliveryToken);
+    }
+    const {error}=await sb.rpc("pharmacy_register_delivery",{
+      p_order_id:activeOrder.id,
+      p_receiver_name:receiver,
+      p_observation:document.getElementById("obs").value||null,
+      p_lines:lines,
+      p_idempotency_key:deliveryToken
+    });
+    if(error)throw error;
+    localStorage.removeItem(tokenKey);
+    const orderId=activeOrder.id;
+    await loadAll();
+    openOrder(orderId);
+  }catch(e){
+    if(deliverBtn){deliverBtn.disabled=false;deliverBtn.textContent="Registrar entrega";}
+    document.getElementById("detailMsg").innerHTML=`<div class="alert danger">${esc(e.message)}</div>`;
+  }
 }
+
 function showGuide(){
   const o=activeOrder,events=deliveryEvents.filter(e=>e.order_id===o.id).sort((a,b)=>new Date(a.delivered_at)-new Date(b.delivered_at));
   document.getElementById("detail").innerHTML=`<div class="card"><div style="display:flex;justify-content:space-between"><div><h2>Guía de entrega de insumos</h2></div><button class="secondary no-print" id="backOrder">← Volver</button></div><div class="grid4"><div class="box"><b>Servicio</b>${esc(o.services.name)}</div><div class="box"><b>Periodo</b>${esc(o.periods.label)}</div><div class="box"><b>Realizado por</b>${esc(o.requester_name)}</div><div class="box"><b>Estado</b>${esc(o.status)}</div><div class="box"><b>Última recepción</b>${esc(o.receiver_name||"—")} · ${fmtDateTime(o.received_at)}</div></div><div class="table-wrap" style="margin-top:14px"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Solicitado</th><th>Autorizado</th><th>Entregado acumulado</th><th>Saldo pendiente</th></tr></thead><tbody>${o.order_lines.map(l=>{const del=deliveredForLine(l.id),auth=Number(l.authorized??l.requested??0),pend=Math.max(0,auth-del);return `<tr><td>${esc(l.items.name)}</td><td>${esc(l.items.unit)}</td><td>${l.added_by_pharmacy?'No solicitado':l.requested}</td><td>${auth}</td><td><b>${del}</b></td><td>${pend}</td></tr>`}).join("")}</tbody></table></div><h3>Detalle de entregas</h3><div class="table-wrap"><table><thead><tr><th>Fecha/hora</th><th>Recibido por</th><th>Detalle</th></tr></thead><tbody>${events.map(ev=>{const lines=deliveryLines.filter(dl=>dl.delivery_event_id===ev.id);return `<tr><td>${fmtDateTime(ev.delivered_at)}</td><td>${esc(ev.receiver_name)}</td><td>${lines.map(dl=>{const ol=o.order_lines.find(x=>Number(x.id)===Number(dl.order_line_id));return `${esc(ol?.items?.name||"Insumo")}: <b>${Number(dl.quantity)}</b>`}).join("<br>")}</td></tr>`}).join("")||'<tr><td colspan="3">Sin entregas registradas.</td></tr>'}</tbody></table></div><div class="footer no-print"><button onclick="window.print()">Imprimir guía</button></div></div>`;
@@ -586,6 +599,33 @@ function renderConsumption(){
   }).join("");
 }
 
+
+function renderServiceCatalog(){
+  const body=document.getElementById("serviceCatalogBody");
+  if(!body)return;
+  const rows=services.slice().sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"es"));
+  body.innerHTML=rows.map(s=>`<tr><td><b>${esc(s.name)}</b></td><td>${s.active===false?'<span class="tag muted">Inactivo</span>':'<span class="tag ok">Activo</span>'}</td></tr>`).join("")||'<tr><td colspan="2" class="small">No hay servicios registrados.</td></tr>';
+}
+async function createService(){
+  const input=document.getElementById("newServiceName"),msg=document.getElementById("newServiceMsg"),btn=document.getElementById("createService");
+  const name=input.value.trim();
+  if(name.length<2){msg.innerHTML='<div class="alert danger">Ingrese el nombre del servicio o sector.</div>';return;}
+  const duplicate=services.find(s=>String(s.name||"").trim().toLowerCase()===name.toLowerCase());
+  if(duplicate){
+    msg.innerHTML=duplicate.active===false?'<div class="alert warn">Ese servicio ya existe pero está inactivo.</div>':'<div class="alert warn">Ese servicio ya existe.</div>';
+    return;
+  }
+  btn.disabled=true;
+  const {data,error}=await sb.from("services").insert({name,active:true}).select("id,name,active").single();
+  btn.disabled=false;
+  if(error){msg.innerHTML=`<div class="alert danger">${esc(error.message)}</div>`;return;}
+  input.value="";
+  msg.innerHTML='<div class="status">Servicio creado correctamente. Ahora puede habilitarle insumos en la sección siguiente.</div>';
+  await loadAll();
+  const sel=document.getElementById("permService");
+  if(sel&&data?.id){sel.value=String(data.id);renderPermissions();}
+}
+
 function renderItemCatalog(){
   const body=document.getElementById("itemCatalogBody"),search=document.getElementById("itemCatalogSearch"),showInactive=document.getElementById("showInactiveItems");
   if(!body||!search)return;
@@ -650,7 +690,7 @@ function renderPermissions(){
   const sel=document.getElementById("permService"),body=document.getElementById("permBody"),search=document.getElementById("permSearch");
   if(!sel||!body||!search)return;
   const previous=sel.value;
-  sel.innerHTML=services.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("");
+  sel.innerHTML=services.filter(s=>s.active!==false).map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join("");
   if(previous&&[...sel.options].some(o=>o.value===previous))sel.value=previous;
   if(!sel.value&&sel.options.length)sel.selectedIndex=0;
   const sid=Number(sel.value||0),q=search.value.trim().toLowerCase(),current=permissionMapForService(sid);
@@ -694,13 +734,14 @@ function renderConfig(){
     document.getElementById("periodMsg").innerHTML='<div class="status">Fechas del periodo actualizadas.</div>';
     await loadAll();
   });
+  renderServiceCatalog();
   renderItemCatalog();
   renderPermissions();
   const op=emailConfig.opening,cl=emailConfig.closing;
   if(op){openActive.checked=op.active;openDays.value=op.days_before;openType.value=op.day_type;openSubject.value=op.subject||"";openBody.value=op.body||""}
   if(cl){closeActive.checked=cl.active;closeDays.value=cl.days_before;closeType.value=cl.day_type;closeSubject.value=cl.subject||"";closeBody.value=cl.body||""}
   const byService=Object.fromEntries(serviceResponsibles.map(r=>[String(r.service_id),r]));
-  document.getElementById("respBody").innerHTML=services.map(s=>{const r=byService[String(s.id)]||{};return `<tr data-service="${s.id}"><td><b>${esc(s.name)}</b></td><td><input class="pname" value="${esc(r.principal_name||"")}" style="width:180px"></td><td><input class="pemail" type="email" value="${esc(r.principal_email||"")}" style="width:240px"></td><td><input class="sname" value="${esc(r.substitute_name||"")}" style="width:180px"></td><td><input class="semail" type="email" value="${esc(r.substitute_email||"")}" style="width:240px"></td><td><input class="ractive" type="checkbox" ${r.active!==false?"checked":""}></td></tr>`}).join("");
+  document.getElementById("respBody").innerHTML=services.filter(s=>s.active!==false).map(s=>{const r=byService[String(s.id)]||{};return `<tr data-service="${s.id}"><td><b>${esc(s.name)}</b></td><td><input class="pname" value="${esc(r.principal_name||"")}" style="width:180px"></td><td><input class="pemail" type="email" value="${esc(r.principal_email||"")}" style="width:240px"></td><td><input class="sname" value="${esc(r.substitute_name||"")}" style="width:180px"></td><td><input class="semail" type="email" value="${esc(r.substitute_email||"")}" style="width:240px"></td><td><input class="ractive" type="checkbox" ${r.active!==false?"checked":""}></td></tr>`}).join("");
   document.getElementById("emailAutoStatus").innerHTML='<b>Configuración interna lista.</b> Falta conectar el proveedor que enviará físicamente los correos y activar la ejecución diaria.';
 }
 
@@ -760,6 +801,7 @@ document.getElementById("addPeriod").onclick=async()=>{
   document.getElementById("periodMsg").innerHTML='<div class="status">Nuevo periodo agregado.</div>';
   await loadAll();
 };
+document.getElementById("createService").onclick=createService;
 document.getElementById("createItem").onclick=createCatalogItem;
 document.getElementById("itemCatalogSearch").oninput=renderItemCatalog;
 document.getElementById("permCheckVisible").onclick=()=>setVisiblePermission(true);
