@@ -9,7 +9,7 @@
 *{box-sizing:border-box}body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;background:var(--bg);color:var(--text)}
 header{background:linear-gradient(135deg,var(--brand2),var(--brand));color:white;padding:18px 26px}header h1{margin:0;font-size:22px}header p{margin:4px 0 0;font-size:13px;opacity:.9}
 .shell{max-width:1250px;margin:auto;padding:24px}.card{background:white;border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:18px;box-shadow:0 2px 10px rgba(24,39,75,.05)}
-.grid{display:grid;grid-template-columns:2fr 1fr 2fr auto;gap:10px;align-items:end}label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}input,select,button{font:inherit}input,select{width:100%;border:1px solid #cfd7e3;border-radius:9px;padding:9px 10px;background:white}
+.grid{display:grid;grid-template-columns:2fr 1fr 2fr auto;gap:10px;align-items:end}label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px}input,select,textarea,button{font:inherit}input,select,textarea{width:100%;border:1px solid #cfd7e3;border-radius:9px;padding:9px 10px;background:white}textarea{min-height:90px;resize:vertical}
 button,.btn{border:0;border-radius:9px;padding:10px 14px;background:var(--brand);color:white;font-weight:700;cursor:pointer;text-decoration:none;display:inline-block}.secondary{background:#eef2f7;color:#23324b}
 .alert{padding:10px 12px;border-radius:10px;margin:10px 0;font-size:13px}.info{background:var(--soft);border-left:4px solid var(--brand)}.warn{background:var(--warn);border-left:4px solid var(--warnb)}.danger{background:var(--danger);border-left:4px solid var(--dangerb)}.status{background:var(--ok)}
 .small{font-size:12px;color:var(--muted)}table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px}th{background:#edf3f8;text-align:left;padding:10px;border-bottom:1px solid var(--line)}td{padding:9px 10px;border-bottom:1px solid #edf0f4;vertical-align:top}.table-wrap{border:1px solid var(--line);border-radius:12px;overflow:auto;max-height:600px}
@@ -34,6 +34,7 @@ input[type=number]{width:110px}.hidden{display:none!important}.footer{display:fl
   <div id="orderInfo" class="alert info"></div>
   <p class="small">Ingrese únicamente cantidades adicionales. Si el insumo ya estaba en el pedido, se sumará a lo solicitado originalmente. Para un insumo nuevo debe informar su stock actual.</p>
   <div class="table-wrap"><table><thead><tr><th>Insumo</th><th>Unidad</th><th>Solicitado actualmente</th><th>Stock actual si es nuevo</th><th>Agregar</th></tr></thead><tbody id="body"></tbody></table></div>
+  <div style="margin-top:16px"><label for="complementObservation"><b>Observaciones del servicio</b></label><textarea id="complementObservation" maxlength="1000" placeholder="Opcional. Agregue algún antecedente relacionado con este complemento."></textarea></div>
   <div class="footer"><a class="btn secondary" href="solicitar.html">Cancelar</a><button id="send">Agregar al pedido</button></div>
   <div id="result"></div>
 </div>
@@ -73,11 +74,11 @@ async function loadOrder(){
   document.getElementById("orderCard").classList.remove("hidden");
 }
 async function sendComplement(){
-  const actor=document.getElementById("actor").value.trim(),serviceId=Number(document.getElementById("service").value),periodId=Number(document.getElementById("period").value),lines=[];
+  const actor=document.getElementById("actor").value.trim(),serviceId=Number(document.getElementById("service").value),periodId=Number(document.getElementById("period").value),observation=document.getElementById("complementObservation")?.value.trim()||null,lines=[];
   for(const tr of document.querySelectorAll("#body tr")){const add=Number(tr.querySelector(".add")?.value||0);if(!(add>0))continue;const isExisting=tr.dataset.existing==="1",stockInput=tr.querySelector(".stock"),stock=isExisting?null:(stockInput?.value===""?null:Number(stockInput?.value));if(!isExisting&&(stock===null||stock<0)){document.getElementById("result").innerHTML='<div class="alert danger">Todo insumo nuevo debe tener stock actual informado.</div>';return;}lines.push({item_id:Number(tr.dataset.item),current_stock:stock,add_requested:add});}
   if(!lines.length){document.getElementById("result").innerHTML='<div class="alert danger">Ingrese al menos una cantidad adicional.</div>';return;}
   const btn=document.getElementById("send");btn.disabled=true;
-  const {error}=await sb.rpc("complement_order",{p_service_id:serviceId,p_period_id:periodId,p_actor_name:actor,p_lines:lines});
+  const {error}=await sb.rpc("complement_order",{p_service_id:serviceId,p_period_id:periodId,p_actor_name:actor,p_lines:lines,p_observation:observation});
   if(error){btn.disabled=false;document.getElementById("result").innerHTML=`<div class="alert danger">${esc(error.message)}</div>`;return;}
   document.getElementById("result").innerHTML='<div class="alert status"><b>Complemento agregado correctamente.</b> Quedó incorporado al mismo pedido y al consolidado.</div>';setTimeout(loadOrder,500);
 }
